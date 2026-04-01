@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WordComet</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  
+  <!-- Loading State -->
+  <div id="loading" class="state">
+    <div class="comet-loader">
+      <div class="comet-trail"></div>
+    </div>
+    <p class="loading-text">Catching today's word...</p>
+  </div>
+
+  <!-- No Word State -->
+  <div id="no-word" class="state hidden">
+    <div class="empty-comet">☄️</div>
+    <p class="empty-title">No word yet today</p>
+    <p class="empty-sub">The comet hasn't landed. Check back soon.</p>
+    <button id="retry-btn" class="btn-retry">Try Again</button>
+  </div>
+
+  <!-- Word Card -->
+  <div id="word-card" class="state hidden">
+
+    <!-- Header -->
+    <header class="card-header">
+      <div class="brand">
+        <span class="brand-icon">☄️</span>
+        <span class="brand-name">WordComet</span>
+      </div>
+      <time id="word-date" class="word-date"></time>
+    </header>
+
+    <!-- Main Word -->
+    <section class="word-section">
+      <h1 id="word-text" class="word-text"></h1>
+      <div class="word-meta">
+        <span id="word-pos" class="pill pill-pos"></span>
+        <span id="word-lang" class="pill pill-lang"></span>
+      </div>
+    </section>
+
+    <!-- Pronunciation -->
+    <section id="pronunciation-section" class="pronunciation-section">
+      <div id="word-pronunciation" class="pronunciation"></div>
+      <div id="word-phonetics" class="phonetics"></div>
+    </section>
+
+    <!-- Meaning -->
+    <section class="meaning-section">
+      <h2 class="section-label">Meaning</h2>
+      <p id="word-meaning" class="meaning-text"></p>
+    </section>
+
+    <!-- Example -->
+    <section id="example-section" class="example-section">
+      <h2 class="section-label">Example</h2>
+      <blockquote id="word-example" class="example-text"></blockquote>
+    </section>
+
+    <!-- Actions -->
+    <footer class="card-footer">
+      <button id="copy-btn" class="btn-action" title="Copy word">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span id="copy-label">Copy</span>
+      </button>
+      <button id="share-btn" class="btn-action" title="Share word">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+        Share
+      </button>
+    </footer>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

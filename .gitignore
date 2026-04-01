@@ -1,0 +1,10 @@
+/myenv
+/wordcomet
+admin.py
+app.py
+branch.py
+*.pyc
+.env
+wordcomet.json
+current_word.json
+fcm_tokens.json

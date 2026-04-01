@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "WordComet — Word of the Day",
+  "version": "1.0.0",
+  "description": "A beautiful new word lands in your browser every day.",
+  "permissions": ["storage", "notifications", "alarms", "gcm"],
+  "host_permissions": ["https://fcm.googleapis.com/*","https://wordcomet.shyapsneon.tech/*"],
+  "externally_connectable": {
+    "matches": ["https://wordcomet.shyapsneon.tech/*"]
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

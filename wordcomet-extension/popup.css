@@ -1,0 +1,315 @@
+/* ─── WordComet — Cosmic Editorial ─────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&display=swap');
+
+:root {
+  --bg-deep: #0c0a14;
+  --bg-card: #13111d;
+  --bg-surface: #1a1726;
+  --text-primary: #f0ecf8;
+  --text-secondary: #9b93b0;
+  --text-muted: #6a6182;
+  --accent: #c8a2ff;
+  --accent-glow: rgba(200, 162, 255, 0.15);
+  --accent-warm: #ffb86c;
+  --border: rgba(200, 162, 255, 0.08);
+  --border-strong: rgba(200, 162, 255, 0.15);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 380px;
+  min-height: 200px;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Cosmic background grain */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 20% 0%, rgba(200, 162, 255, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(255, 184, 108, 0.04) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── States ─────────────────────────────────────────── */
+
+.state { position: relative; z-index: 1; }
+.hidden { display: none !important; }
+
+/* ─── Loading ────────────────────────────────────────── */
+
+#loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 260px;
+  gap: 20px;
+}
+
+.comet-loader {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  position: relative;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.comet-trail {
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(to left, var(--accent), transparent);
+  transform: translateY(-50%);
+  animation: trail 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(0.8); opacity: 0.6; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes trail {
+  0%, 100% { width: 30px; opacity: 0.3; }
+  50% { width: 60px; opacity: 0.8; }
+}
+
+.loading-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+/* ─── Empty State ────────────────────────────────────── */
+
+#no-word {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 260px;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.empty-comet { font-size: 36px; margin-bottom: 4px; }
+.empty-title { font-family: 'Instrument Serif', serif; font-size: 20px; color: var(--text-primary); }
+.empty-sub { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+.btn-retry {
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  color: var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retry:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+}
+
+/* ─── Word Card ──────────────────────────────────────── */
+
+#word-card { padding: 20px 24px 16px; }
+
+/* Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brand-icon { font-size: 16px; }
+
+.brand-name {
+  font-family: 'Instrument Serif', serif;
+  font-size: 15px;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.word-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Word Section */
+.word-section { margin-bottom: 16px; }
+
+.word-text {
+  font-family: 'Instrument Serif', serif;
+  font-size: 42px;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--text-primary) 60%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.word-meta {
+  display: flex;
+  gap: 8px;
+}
+
+.pill {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+}
+
+.pill-pos {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid rgba(200, 162, 255, 0.12);
+}
+
+.pill-lang {
+  background: rgba(255, 184, 108, 0.08);
+  color: var(--accent-warm);
+  border: 1px solid rgba(255, 184, 108, 0.1);
+}
+
+/* Pronunciation */
+.pronunciation-section {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pronunciation {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.phonetics {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Meaning */
+.meaning-section { margin-bottom: 16px; }
+
+.section-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 6px;
+}
+
+.meaning-text {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+/* Example */
+.example-section { margin-bottom: 20px; }
+
+.example-text {
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text-muted);
+  padding-left: 14px;
+  border-left: 2px solid var(--border-strong);
+}
+
+/* Footer */
+.card-footer {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-action:hover {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: rgba(200, 162, 255, 0.2);
+}
+
+.btn-action.copied {
+  background: rgba(80, 200, 120, 0.1);
+  color: #50c878;
+  border-color: rgba(80, 200, 120, 0.2);
+}
+
+/* ─── Fade-in Animation ──────────────────────────────── */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#word-card .card-header { animation: fadeUp 0.3s ease both; }
+#word-card .word-section { animation: fadeUp 0.3s ease 0.05s both; }
+#word-card .pronunciation-section { animation: fadeUp 0.3s ease 0.1s both; }
+#word-card .meaning-section { animation: fadeUp 0.3s ease 0.15s both; }
+#word-card .example-section { animation: fadeUp 0.3s ease 0.2s both; }
+#word-card .card-footer { animation: fadeUp 0.3s ease 0.25s both; }
