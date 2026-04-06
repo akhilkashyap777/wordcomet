@@ -2,40 +2,49 @@
 
 importScripts("config.js");
 
-// ─── Register with FCM via chrome.gcm ───────────────────
+// ─── Helper: Base64 URL to Uint8Array ───────────────────
 
-async function registerFCM() {
-  return new Promise((resolve, reject) => {
-    chrome.gcm.register([CONFIG.GCM_SENDER_ID], async (token) => {
-      if (chrome.runtime.lastError) {
-        console.error("WordComet: GCM register failed", chrome.runtime.lastError);
-        return reject(chrome.runtime.lastError);
-      }
-      console.log("WordComet: GCM token obtained");
-      await chrome.storage.local.set({ gcmToken: token });
-      await registerToken(token);
-      resolve(token);
-    });
-  });
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
 }
 
-// ─── Register device token with backend ─────────────────
+// ─── Subscribe to Web Push ──────────────────────────────
 
-async function registerToken(token) {
+async function subscribePush() {
+  try {
+    const sub = await self.registration.pushManager.subscribe({
+      userVisibleOnly: false,
+      applicationServerKey: urlBase64ToUint8Array(CONFIG.VAPID_KEY),
+    });
+    console.log("WordComet: Web Push subscribed");
+    await registerSubscription(sub);
+    return sub;
+  } catch (e) {
+    console.error("WordComet: Push subscribe failed", e);
+  }
+}
+
+// ─── Register subscription with backend ─────────────────
+
+async function registerSubscription(sub) {
   try {
     await fetch(`${CONFIG.API_BASE}/register-device`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ subscription: sub.toJSON() }),
     });
-    console.log("WordComet: token registered with backend");
+    console.log("WordComet: subscription registered with backend");
   } catch (e) {
     console.error("WordComet: register failed", e);
   }
 }
 
-// ─── First-launch seed fetch (one-time only) ─────────────
-// Only called on install so the popup isn't empty before the first push
+// ─── First-launch seed fetch ─────────────────────────────
 
 async function seedWordOnInstall() {
   try {
@@ -52,26 +61,27 @@ async function seedWordOnInstall() {
 
 async function showWordNotification(data) {
   if (!data) return;
-  await chrome.notifications.create("wordcomet-daily", {
-    type: "basic",
-    iconUrl: "icons/icon128.png",
-    title: `☄️ Word of the Day: ${data.word}`,
-    message: `(${data.part_of_speech}) ${data.meaning}${data.example ? `\n"${data.example}"` : ""}`,
-    priority: 2,
-  });
+  await self.registration.showNotification(
+    `☄️ Word of the Day: ${data.word}`,
+    {
+      body: `(${data.part_of_speech}) ${data.meaning}`,
+      icon: "icons/icon128.png",
+    }
+  );
 }
 
 // ─── On install ──────────────────────────────────────────
 
 chrome.runtime.onInstalled.addListener(async () => {
-  await registerFCM();
-  await seedWordOnInstall(); // one-time seed so popup isn't blank
+  await subscribePush();
+  await seedWordOnInstall();
 });
 
-// ─── Listen for FCM push (this is the only update path) ──
+// ─── Listen for Web Push ─────────────────────────────────
 
-chrome.gcm.onMessage.addListener(async (message) => {
-  const d = message.data;
+self.addEventListener("push", (event) => {
+  let d;
+  try { d = event.data.json(); } catch { return; }
   if (!d || !d.word) return;
 
   const wordData = {
@@ -85,11 +95,12 @@ chrome.gcm.onMessage.addListener(async (message) => {
     date: d.date || new Date().toISOString().split("T")[0],
   };
 
-  // Store for popup to read
-  await chrome.storage.local.set({ wordData, lastFetch: Date.now() });
-
-  // Show notification
-  await showWordNotification(wordData);
+  event.waitUntil(
+    (async () => {
+      await chrome.storage.local.set({ wordData, lastFetch: Date.now() });
+      await showWordNotification(wordData);
+    })()
+  );
 });
 
 // ─── On notification click → open popup ─────────────────
