@@ -18,20 +18,15 @@ function showState(state) {
 // ─── Render Word ─────────────────────────────────────────
 
 function renderWord(data) {
-  // Date
   const d = data.date ? new Date(data.date + "T00:00:00") : new Date();
   $("#word-date").textContent = d.toLocaleDateString("en-US", {
     month: "short", day: "numeric", year: "numeric"
   });
 
-  // Word
   $("#word-text").textContent = data.word;
-
-  // Part of speech & language
   $("#word-pos").textContent = data.part_of_speech;
   $("#word-lang").textContent = data.language || "English";
 
-  // Pronunciation
   const pronSection = $("#pronunciation-section");
   if (data.pronunciation || data.phonetics) {
     pronSection.classList.remove("hidden");
@@ -41,10 +36,8 @@ function renderWord(data) {
     pronSection.classList.add("hidden");
   }
 
-  // Meaning
   $("#word-meaning").textContent = data.meaning;
 
-  // Example
   const exSection = $("#example-section");
   if (data.example) {
     exSection.classList.remove("hidden");
@@ -56,31 +49,33 @@ function renderWord(data) {
   showState(elWordCard);
 }
 
-// ─── Fetch Word ──────────────────────────────────────────
+// ─── Load Word ───────────────────────────────────────────
+// Primary source: chrome.storage.local (written by FCM push in background.js)
+// Fallback: direct fetch — only used when storage is empty (first launch / no push yet)
 
-async function loadWord() {
+async function loadWord(forceRefetch = false) {
   showState(elLoading);
 
-  // Try cache first
   const cached = await chrome.storage.local.get(["wordData"]);
-  if (cached.wordData) {
+
+  if (cached.wordData && !forceRefetch) {
+    // FCM already pushed a word — render it immediately, no fetch needed
     renderWord(cached.wordData);
+    return;
   }
 
-  // Then fetch fresh
+  // First launch or manual retry: fetch once to seed storage
   try {
     const res = await fetch(`${CONFIG.API_BASE}/word-of-the-day`);
     if (res.ok) {
       const data = await res.json();
       await chrome.storage.local.set({ wordData: data, lastFetch: Date.now() });
       renderWord(data);
-    } else if (!cached.wordData) {
+    } else {
       showState(elNoWord);
     }
   } catch (e) {
-    if (!cached.wordData) {
-      showState(elNoWord);
-    }
+    showState(elNoWord);
   }
 }
 
@@ -126,14 +121,12 @@ $("#share-btn").addEventListener("click", async () => {
       const s = btn.querySelector("span");
       if (s) s.textContent = "Share";
     }, 1500);
-  } catch {
-    // fallback — just copy
-  }
+  } catch {}
 });
 
 // ─── Retry Button ────────────────────────────────────────
 
-$("#retry-btn").addEventListener("click", loadWord);
+$("#retry-btn").addEventListener("click", () => loadWord(true));
 
 // ─── Init ────────────────────────────────────────────────
 

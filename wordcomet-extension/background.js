@@ -11,6 +11,7 @@ async function registerFCM() {
         console.error("WordComet: GCM register failed", chrome.runtime.lastError);
         return reject(chrome.runtime.lastError);
       }
+      console.log("WordComet: GCM token obtained");
       await chrome.storage.local.set({ gcmToken: token });
       await registerToken(token);
       resolve(token);
@@ -18,21 +19,8 @@ async function registerFCM() {
   });
 }
 
-// Fetch word from backend
-async function fetchWord() {
-  try {
-    const res = await fetch(`${CONFIG.API_BASE}/word-of-the-day`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    await chrome.storage.local.set({ wordData: data, lastFetch: Date.now() });
-    return data;
-  } catch (e) {
-    console.error("WordComet: fetch failed", e);
-    return null;
-  }
-}
+// ─── Register device token with backend ─────────────────
 
-// Register device token with backend
 async function registerToken(token) {
   try {
     await fetch(`${CONFIG.API_BASE}/register-device`, {
@@ -40,11 +28,27 @@ async function registerToken(token) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),
     });
-    console.log("WordComet: device registered");
+    console.log("WordComet: token registered with backend");
   } catch (e) {
     console.error("WordComet: register failed", e);
   }
 }
+
+// ─── First-launch seed fetch (one-time only) ─────────────
+// Only called on install so the popup isn't empty before the first push
+
+async function seedWordOnInstall() {
+  try {
+    const res = await fetch(`${CONFIG.API_BASE}/word-of-the-day`);
+    if (!res.ok) return;
+    const data = await res.json();
+    await chrome.storage.local.set({ wordData: data, lastFetch: Date.now() });
+  } catch (e) {
+    console.error("WordComet: seed fetch failed", e);
+  }
+}
+
+// ─── Show rich notification ──────────────────────────────
 
 async function showWordNotification(data) {
   if (!data) return;
@@ -57,26 +61,14 @@ async function showWordNotification(data) {
   });
 }
 
-// On install — fetch immediately
+// ─── On install ──────────────────────────────────────────
+
 chrome.runtime.onInstalled.addListener(async () => {
   await registerFCM();
-  const data = await fetchWord();
-  if (data) await showWordNotification(data);
-  chrome.alarms.create("fetchWord", { periodInMinutes: 60 });
-  chrome.alarms.create("dailyNotification", {
-    when: getNext8AM(),
-    periodInMinutes: 24 * 60,
-  });
+  await seedWordOnInstall(); // one-time seed so popup isn't blank
 });
 
-// On alarm — periodic fetch
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "fetchWord") {
-    fetchWord();
-  }
-});
-
-// ─── Listen for FCM push ─────────────────────────────────
+// ─── Listen for FCM push (this is the only update path) ──
 
 chrome.gcm.onMessage.addListener(async (message) => {
   const d = message.data;
@@ -93,7 +85,10 @@ chrome.gcm.onMessage.addListener(async (message) => {
     date: d.date || new Date().toISOString().split("T")[0],
   };
 
+  // Store for popup to read
   await chrome.storage.local.set({ wordData, lastFetch: Date.now() });
+
+  // Show notification
   await showWordNotification(wordData);
 });
 
@@ -103,20 +98,13 @@ chrome.notifications.onClicked.addListener(() => {
   chrome.action.openPopup().catch(() => {});
 });
 
-// ─── Helper ──────────────────────────────────────────────
+// ─── Listen for messages from popup ─────────────────────
 
-function getNext8AM() {
-  const now = new Date();
-  const next = new Date();
-  next.setHours(8, 0, 0, 0);
-  if (next <= now) next.setDate(next.getDate() + 1);
-  return next.getTime();
-}
-
-// Listen for messages from popup
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.action === "fetchWord") {
-    fetchWord().then((data) => sendResponse(data));
-    return true; // async
+  if (msg.action === "getWord") {
+    chrome.storage.local.get(["wordData"]).then((result) => {
+      sendResponse(result.wordData || null);
+    });
+    return true;
   }
 });
