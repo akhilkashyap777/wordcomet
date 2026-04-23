@@ -304,8 +304,8 @@ def set_quiz(
         raise HTTPException(status_code=400, detail="Exactly 4 options required.")
     if body.correct_index not in (0, 1, 2, 3):
         raise HTTPException(status_code=400, detail="correct_index must be 0-3.")
-    if len(body.hints) != 3:
-        raise HTTPException(status_code=400, detail="Exactly 3 hints required.")
+    if len(body.hints) < 1 or len(body.hints) > 5:
+        raise HTTPException(status_code=400, detail="Provide 1 to 5 hints.")
     if body.quiz_type not in ("word_to_meaning", "fill_in_blank", "synonym", "antonym", "usage_check", "definition_to_word"):
         raise HTTPException(status_code=400, detail="Invalid quiz_type.")
 
@@ -322,7 +322,7 @@ def set_quiz(
     _save_quiz(current_quiz)
 
     if body.send_notification:
-        background_tasks.add_task(send_quiz_notification)
+        background_tasks.add_task(send_quiz_notification, current_quiz)
 
     return {
         "status": "success",
@@ -333,10 +333,22 @@ def set_quiz(
 
 # ─── Quiz Notification ──────────────────────────────────────────────
 
-def send_quiz_notification():
+def send_quiz_notification(quiz_data: dict):
     """Notify devices that a new quiz is available."""
     if not firebase_admin._apps or not fcm_tokens:
         return
+
+    quiz_titles = {
+        "word_to_meaning": "What does this word mean?",
+        "fill_in_blank": "Fill in the blank!",
+        "synonym": "Find the synonym!",
+        "antonym": "Find the opposite!",
+        "usage_check": "Spot the correct usage!",
+        "definition_to_word": "Name that word!",
+    }
+
+    title = "☄️ Quiz Time!"
+    body = quiz_titles.get(quiz_data["quiz_type"], "A new quiz is waiting for you.")
 
     stale = set()
     success_count = 0
@@ -344,10 +356,10 @@ def send_quiz_notification():
     for token in list(fcm_tokens):
         message = messaging.Message(
             notification=messaging.Notification(
-                title="☄️ WordComet Quiz Time!",
-                body="A new vocabulary quiz is waiting for you.",
+                title=title,
+                body=body,
             ),
-            data={"type": "quiz"},
+            data={"type": "quiz", "quiz_type": quiz_data["quiz_type"]},
             token=token,
         )
         try:

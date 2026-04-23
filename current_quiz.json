@@ -1,18 +1,17 @@
 {
   "quiz_type": "word_to_meaning",
-  "question": "Ephemeral",
+  "question": "\u09ae\u09f0\u09ae (Morom)",
   "options": [
-    "Lasting for a very short time",
-    "Extremely large in size",
-    "Filled with deep sorrow",
-    "Happening by chance"
+    "Love, affection, tenderness",
+    "Anger, rage, fury",
+    "Fear, anxiety, worry",
+    "Pride, arrogance, ego"
   ],
   "correct_index": 0,
   "hints": [
-    "It is an Adjective",
-    "Starts with E",
-    "Eliminate: Extremely large in size"
+    "It is a Noun",
+    "Think about what a mother feels for her child"
   ],
-  "example": "The ephemeral beauty of cherry blossoms.",
+  "example": "The mother embraced her child with love.",
   "date": "2026-04-23"
 }
