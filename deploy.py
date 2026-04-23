@@ -250,6 +250,11 @@ def send_push_notification(word_data: dict):
 
     print(f"   📬 Sent to {success_count}/{len(fcm_tokens) + len(stale)} device(s).")
 
+@app.get("/admin/devices")
+def get_devices(x_api_key: str = Header(...)):
+    verify_admin(x_api_key)
+    return {"count": len(fcm_tokens)}
+
 
 # ─── Run ─────────────────────────────────────────────────────────────
 
