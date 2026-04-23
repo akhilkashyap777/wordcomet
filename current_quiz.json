@@ -1,0 +1,18 @@
+{
+  "quiz_type": "word_to_meaning",
+  "question": "Ephemeral",
+  "options": [
+    "Lasting for a very short time",
+    "Extremely large in size",
+    "Filled with deep sorrow",
+    "Happening by chance"
+  ],
+  "correct_index": 0,
+  "hints": [
+    "It is an Adjective",
+    "Starts with E",
+    "Eliminate: Extremely large in size"
+  ],
+  "example": "The ephemeral beauty of cherry blossoms.",
+  "date": "2026-04-23"
+}

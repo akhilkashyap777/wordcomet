@@ -256,6 +256,115 @@ def get_devices(x_api_key: str = Header(...)):
     return {"count": len(fcm_tokens)}
 
 
+class QuizInput(BaseModel):
+    quiz_type: str  # "word_to_meaning" or "fill_in_blank"
+    question: str
+    options: list[str]  # exactly 4
+    correct_index: int  # 0-3
+    hints: list[str]  # 3 progressive hints
+    example: str
+    send_notification: Optional[bool] = True
+
+# ─── Quiz Persistence ────────────────────────────────────────────────
+
+QUIZ_STORE_FILE = os.path.join(BASE_DIR, "current_quiz.json")
+
+def _load_quiz() -> dict | None:
+    if os.path.exists(QUIZ_STORE_FILE):
+        with open(QUIZ_STORE_FILE, "r") as f:
+            return json.load(f)
+    return None
+
+def _save_quiz(quiz_data: dict):
+    with open(QUIZ_STORE_FILE, "w") as f:
+        json.dump(quiz_data, f, indent=2)
+
+current_quiz: dict | None = _load_quiz()
+
+# ─── Quiz Endpoints ─────────────────────────────────────────────────
+
+@app.get("/quiz")
+def get_quiz():
+    """Fetch today's quiz."""
+    if not current_quiz:
+        raise HTTPException(status_code=404, detail="No quiz set for today yet.")
+    return current_quiz
+
+
+@app.post("/admin/set-quiz")
+def set_quiz(
+    body: QuizInput,
+    background_tasks: BackgroundTasks,
+    x_api_key: str = Header(...)
+):
+    global current_quiz
+    verify_admin(x_api_key)
+
+    if len(body.options) != 4:
+        raise HTTPException(status_code=400, detail="Exactly 4 options required.")
+    if body.correct_index not in (0, 1, 2, 3):
+        raise HTTPException(status_code=400, detail="correct_index must be 0-3.")
+    if len(body.hints) != 3:
+        raise HTTPException(status_code=400, detail="Exactly 3 hints required.")
+    if body.quiz_type not in ("word_to_meaning", "fill_in_blank", "synonym", "antonym", "usage_check", "definition_to_word"):
+        raise HTTPException(status_code=400, detail="Invalid quiz_type.")
+
+    current_quiz = {
+        "quiz_type": body.quiz_type,
+        "question": body.question,
+        "options": body.options,
+        "correct_index": body.correct_index,
+        "hints": body.hints,
+        "example": body.example,
+        "date": str(date.today()),
+    }
+
+    _save_quiz(current_quiz)
+
+    if body.send_notification:
+        background_tasks.add_task(send_quiz_notification)
+
+    return {
+        "status": "success",
+        "message": "Quiz is now live!",
+        "quiz": current_quiz,
+    }
+
+
+# ─── Quiz Notification ──────────────────────────────────────────────
+
+def send_quiz_notification():
+    """Notify devices that a new quiz is available."""
+    if not firebase_admin._apps or not fcm_tokens:
+        return
+
+    stale = set()
+    success_count = 0
+
+    for token in list(fcm_tokens):
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title="☄️ WordComet Quiz Time!",
+                body="A new vocabulary quiz is waiting for you.",
+            ),
+            data={"type": "quiz"},
+            token=token,
+        )
+        try:
+            messaging.send(message)
+            success_count += 1
+        except messaging.UnregisteredError:
+            stale.add(token)
+        except Exception as e:
+            print(f"   ⚠️  Quiz notif failed: {e}")
+
+    if stale:
+        fcm_tokens.difference_update(stale)
+        _save_tokens(fcm_tokens)
+
+    print(f"   📬 Quiz notif sent to {success_count} device(s).")
+
+
 # ─── Run ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
