@@ -1,17 +1,18 @@
 {
-  "quiz_type": "word_to_meaning",
-  "question": "\u09ae\u09f0\u09ae (Morom)",
+  "quiz_type": "definition_to_word",
+  "question": "Which word means 'a feeling of deep sadness or gloom'?",
   "options": [
-    "Love, affection, tenderness",
-    "Anger, rage, fury",
-    "Fear, anxiety, worry",
-    "Pride, arrogance, ego"
+    "Melancholy",
+    "Euphoria",
+    "Resilience",
+    "Serendipity"
   ],
   "correct_index": 0,
   "hints": [
     "It is a Noun",
-    "Think about what a mother feels for her child"
+    "Often associated with rainy days and poetry",
+    "Starts with M"
   ],
-  "example": "The mother embraced her child with love.",
+  "example": "A wave of melancholy washed over him as he watched the sunset alone.",
   "date": "2026-04-23"
 }

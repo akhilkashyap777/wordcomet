@@ -8,3 +8,5 @@ branch.py
 current_word.json
 fcm_tokens.json
 wordcomet.json
+threads_credentials.json
+current_quiz.json
