@@ -256,13 +256,16 @@ def get_devices(x_api_key: str = Header(...)):
     return {"count": len(fcm_tokens)}
 
 
-class QuizInput(BaseModel):
-    quiz_type: str  # "word_to_meaning" or "fill_in_blank"
+class QuizQuestion(BaseModel):
+    quiz_type: str
     question: str
-    options: list[str]  # exactly 4
-    correct_index: int  # 0-3
-    hints: list[str]  # 3 progressive hints
+    options: list[str]
+    correct_index: int
+    hints: list[str]
     example: str
+
+class QuizInput(BaseModel):
+    questions: list[QuizQuestion]
     send_notification: Optional[bool] = True
 
 # ─── Quiz Persistence ────────────────────────────────────────────────
@@ -291,6 +294,14 @@ def get_quiz():
     return current_quiz
 
 
+VALID_QUIZ_TYPES = (
+    "word_to_meaning", "fill_in_blank", "synonym",
+    "antonym", "usage_check", "definition_to_word",
+    "part_of_speech", "countability", "refers_to",
+    "word_form", "article",
+    "tense_identification", "correct_tense_in_sentence"
+)
+
 @app.post("/admin/set-quiz")
 def set_quiz(
     body: QuizInput,
@@ -300,23 +311,37 @@ def set_quiz(
     global current_quiz
     verify_admin(x_api_key)
 
-    if len(body.options) != 4:
-        raise HTTPException(status_code=400, detail="Exactly 4 options required.")
-    if body.correct_index not in (0, 1, 2, 3):
-        raise HTTPException(status_code=400, detail="correct_index must be 0-3.")
-    if len(body.hints) < 1 or len(body.hints) > 5:
-        raise HTTPException(status_code=400, detail="Provide 1 to 5 hints.")
-    if body.quiz_type not in ("word_to_meaning", "fill_in_blank", "synonym", "antonym", "usage_check", "definition_to_word"):
-        raise HTTPException(status_code=400, detail="Invalid quiz_type.")
+    if not body.questions:
+        raise HTTPException(status_code=400, detail="At least one question required.")
+    if len(body.questions) > 50:
+        raise HTTPException(status_code=400, detail="Maximum 50 questions per quiz.")
+
+    for idx, q in enumerate(body.questions):
+        prefix = f"Question {idx + 1}:"
+        if len(q.options) != 4:
+            raise HTTPException(status_code=400, detail=f"{prefix} Exactly 4 options required.")
+        if q.correct_index not in (0, 1, 2, 3):
+            raise HTTPException(status_code=400, detail=f"{prefix} correct_index must be 0-3.")
+        if len(q.hints) < 1 or len(q.hints) > 5:
+            raise HTTPException(status_code=400, detail=f"{prefix} Provide 1 to 5 hints.")
+        if q.quiz_type not in VALID_QUIZ_TYPES:
+            raise HTTPException(status_code=400, detail=f"{prefix} Invalid quiz_type.")
 
     current_quiz = {
-        "quiz_type": body.quiz_type,
-        "question": body.question,
-        "options": body.options,
-        "correct_index": body.correct_index,
-        "hints": body.hints,
-        "example": body.example,
         "date": str(date.today()),
+        "total_questions": len(body.questions),
+        "questions": [
+            {
+                "id": idx,
+                "quiz_type": q.quiz_type,
+                "question": q.question,
+                "options": q.options,
+                "correct_index": q.correct_index,
+                "hints": q.hints,
+                "example": q.example,
+            }
+            for idx, q in enumerate(body.questions)
+        ],
     }
 
     _save_quiz(current_quiz)
@@ -326,7 +351,7 @@ def set_quiz(
 
     return {
         "status": "success",
-        "message": "Quiz is now live!",
+        "message": f"Quiz with {len(body.questions)} questions is now live!",
         "quiz": current_quiz,
     }
 
@@ -338,17 +363,9 @@ def send_quiz_notification(quiz_data: dict):
     if not firebase_admin._apps or not fcm_tokens:
         return
 
-    quiz_titles = {
-        "word_to_meaning": "What does this word mean?",
-        "fill_in_blank": "Fill in the blank!",
-        "synonym": "Find the synonym!",
-        "antonym": "Find the opposite!",
-        "usage_check": "Spot the correct usage!",
-        "definition_to_word": "Name that word!",
-    }
-
+    total = quiz_data.get("total_questions", len(quiz_data.get("questions", [])))
     title = "☄️ Quiz Time!"
-    body = quiz_titles.get(quiz_data["quiz_type"], "A new quiz is waiting for you.")
+    body = f"{total} new question{'s' if total != 1 else ''} waiting for you."
 
     stale = set()
     success_count = 0
@@ -359,7 +376,7 @@ def send_quiz_notification(quiz_data: dict):
                 title=title,
                 body=body,
             ),
-            data={"type": "quiz", "quiz_type": quiz_data["quiz_type"]},
+            data={"type": "quiz", "total_questions": str(total)},
             token=token,
         )
         try:

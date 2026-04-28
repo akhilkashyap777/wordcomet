@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "quiz_type": "definition_to_word",
   "question": "Which word means 'a feeling of deep sadness or gloom'?",
   "options": [
@@ -15,4 +16,62 @@
   ],
   "example": "A wave of melancholy washed over him as he watched the sunset alone.",
   "date": "2026-04-23"
+=======
+  "date": "2026-04-28",
+  "total_questions": 3,
+  "questions": [
+    {
+      "id": 0,
+      "quiz_type": "word_to_meaning",
+      "question": "What does hypocrite mean?",
+      "options": [
+        "A person who pretends to hold beliefs they dont actually have",
+        "A skilled negotiator",
+        "A type of medical practitioner",
+        "Someone who avoids confrontation"
+      ],
+      "correct_index": 0,
+      "hints": [
+        "Greek origin meaning stage actor",
+        "Related to pretense",
+        "Often used in moral contexts"
+      ],
+      "example": "He called himself an environmentalist while flying private jets."
+    },
+    {
+      "id": 1,
+      "quiz_type": "synonym",
+      "question": "Which word is a synonym for ephemeral?",
+      "options": [
+        "Eternal",
+        "Fleeting",
+        "Solid",
+        "Verbose"
+      ],
+      "correct_index": 1,
+      "hints": [
+        "Think short-lived",
+        "Opposite of permanent"
+      ],
+      "example": "The ephemeral beauty of cherry blossoms."
+    },
+    {
+      "id": 2,
+      "quiz_type": "antonym",
+      "question": "What is the opposite of verbose?",
+      "options": [
+        "Talkative",
+        "Concise",
+        "Loud",
+        "Eloquent"
+      ],
+      "correct_index": 1,
+      "hints": [
+        "Think brevity",
+        "Few words"
+      ],
+      "example": "Her concise summary captured the entire meeting."
+    }
+  ]
+>>>>>>> aa7e58c (added new challlenges)
 }
