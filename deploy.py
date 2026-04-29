@@ -267,6 +267,7 @@ class QuizQuestion(BaseModel):
 class QuizInput(BaseModel):
     questions: list[QuizQuestion]
     send_notification: Optional[bool] = True
+    featured_index: Optional[int] = 0
 
 # ─── Quiz Persistence ────────────────────────────────────────────────
 
@@ -347,7 +348,7 @@ def set_quiz(
     _save_quiz(current_quiz)
 
     if body.send_notification:
-        background_tasks.add_task(send_quiz_notification, current_quiz)
+        background_tasks.add_task(send_quiz_notification, current_quiz, body.featured_index)
 
     return {
         "status": "success",
@@ -358,14 +359,23 @@ def set_quiz(
 
 # ─── Quiz Notification ──────────────────────────────────────────────
 
-def send_quiz_notification(quiz_data: dict):
-    """Notify devices that a new quiz is available."""
+def send_quiz_notification(quiz_data: dict, featured_index: int = 0):
+    """Notify devices with a specific question in the body."""
     if not firebase_admin._apps or not fcm_tokens:
         return
 
-    total = quiz_data.get("total_questions", len(quiz_data.get("questions", [])))
-    title = "☄️ Quiz Time!"
-    body = f"{total} new question{'s' if total != 1 else ''} waiting for you."
+    questions = quiz_data.get("questions", [])
+    if not questions:
+        return
+
+    if featured_index < 0 or featured_index >= len(questions):
+        featured_index = 0
+
+    featured = questions[featured_index]
+    total = quiz_data.get("total_questions", len(questions))
+
+    title = "☄️ Can you answer this?"
+    body = featured["question"]
 
     stale = set()
     success_count = 0
@@ -376,7 +386,11 @@ def send_quiz_notification(quiz_data: dict):
                 title=title,
                 body=body,
             ),
-            data={"type": "quiz", "total_questions": str(total)},
+            data={
+                "type": "quiz",
+                "total_questions": str(total),
+                "featured_index": str(featured_index),
+            },
             token=token,
         )
         try:
