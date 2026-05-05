@@ -331,6 +331,7 @@ def set_quiz(
     current_quiz = {
         "date": str(date.today()),
         "total_questions": len(body.questions),
+	"featured_index": body.featured_index,
         "questions": [
             {
                 "id": idx,
