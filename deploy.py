@@ -7,7 +7,7 @@ Word persists to current_word.json (survives restarts).
 import uvicorn
 import os
 import json
-from datetime import date
+from datetime import datetime
 from fastapi import FastAPI, HTTPException, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -187,7 +187,7 @@ def set_word(
         "pronunciation": body.pronunciation,
         "phonetics": body.phonetics,
         "language": body.language or "English",
-        "date": str(date.today()),
+        "date": datetime.now().isoformat(timespec="seconds"),
     }
 
     _save_word(current_word)
@@ -330,7 +330,7 @@ def set_quiz(
             raise HTTPException(status_code=400, detail=f"{prefix} Invalid quiz_type.")
 
     current_quiz = {
-        "date": str(date.today()),
+        "date": datetime.now().isoformat(timespec="seconds"),
         "total_questions": len(body.questions),
 	"featured_index": body.featured_index,
         "questions": [
