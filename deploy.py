@@ -224,6 +224,7 @@ def send_push_notification(word_data: dict):
                 body=word_data["meaning"],
             ),
             data={
+                "type": "wod",
                 "word": word_data["word"],
                 "meaning": word_data["meaning"],
                 "part_of_speech": word_data["part_of_speech"],
