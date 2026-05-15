@@ -23,7 +23,7 @@ load_dotenv()
 import firebase_admin
 from firebase_admin import credentials, messaging
 
-from auth_profile import router as auth_router
+from auth import router as auth_router
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
