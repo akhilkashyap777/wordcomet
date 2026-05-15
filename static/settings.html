@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WordComet — Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #0a0a0f;
+    --surface: #111118;
+    --border:  #1e1e2e;
+    --accent:  #6c63ff;
+    --accent2: #ff6584;
+    --text:    #e8e8f0;
+    --muted:   #5a5a72;
+    --card:    #14141f;
+    --green:   #4ade80;
+    --red:     #ff6584;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .orb { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.15; pointer-events: none; animation: drift 14s ease-in-out infinite alternate; }
+  .orb1 { width: 500px; height: 500px; background: var(--accent);  top: -120px; left: -120px; }
+  .orb2 { width: 360px; height: 360px; background: var(--accent2); bottom: -80px; right: -60px; animation-delay: -5s; }
+  @keyframes drift { from { transform: translate(0,0); } to { transform: translate(25px, 18px); } }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.035; pointer-events: none; z-index: 0;
+  }
+
+  /* ── card ── */
+  .card {
+    position: relative; z-index: 10;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px 44px 40px;
+    width: 440px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 0 0 1px rgba(108,99,255,0.07), 0 32px 80px rgba(0,0,0,0.5);
+    animation: rise 0.55s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes rise { from { opacity:0; transform: translateY(24px) scale(0.97); } to { opacity:1; transform: none; } }
+
+  /* ── logo / nav ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 36px;
+  }
+  .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-text {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: 1.15rem; letter-spacing: -0.02em; color: var(--text);
+  }
+  .logo-text span { color: var(--accent); }
+
+  .btn-logout {
+    background: none; border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 14px;
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── section heading ── */
+  h1 {
+    font-family: 'Syne', sans-serif; font-size: 1.6rem;
+    font-weight: 700; letter-spacing: -0.03em; margin-bottom: 6px;
+  }
+  .subtitle { color: var(--muted); font-size: 0.88rem; font-weight: 300; margin-bottom: 32px; line-height: 1.5; }
+
+  /* ── avatar ── */
+  .avatar-row {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 28px;
+  }
+  .avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.3rem;
+    color: #fff; flex-shrink: 0; overflow: hidden;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-info { flex: 1; min-width: 0; }
+  .avatar-email { font-size: 0.82rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .avatar-uid   { font-size: 0.72rem; color: #2e2e45; margin-top: 2px; font-family: monospace; }
+
+  /* ── field ── */
+  .field { margin-bottom: 20px; }
+  .field label {
+    display: block; font-size: 0.78rem; font-weight: 500;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em;
+    margin-bottom: 8px;
+  }
+  .field input {
+    width: 100%; padding: 13px 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 11px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+  }
+  .field input:disabled {
+    opacity: 0.5; cursor: not-allowed;
+  }
+  .field input.readonly-field {
+    opacity: 0.6; cursor: default; pointer-events: none;
+  }
+
+  /* ── role picker ── */
+  .role-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-top: 2px;
+  }
+  .role-card {
+    padding: 16px 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    text-align: center;
+    user-select: none;
+  }
+  .role-card:hover { border-color: #2e2e45; transform: translateY(-1px); }
+  .role-card.selected {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.08);
+  }
+  .role-card.locked {
+    cursor: default; pointer-events: none;
+  }
+  .role-card .role-icon { font-size: 1.6rem; margin-bottom: 6px; }
+  .role-card .role-name {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 0.95rem; color: var(--text);
+  }
+  .role-card .role-desc { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+
+  /* locked badge */
+  .role-locked-note {
+    margin-top: 10px;
+    font-size: 0.78rem; color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .role-locked-note .lock-icon { font-size: 0.85rem; }
+
+  /* ── buttons ── */
+  .btn-primary {
+    width: 100%; padding: 14px;
+    background: var(--accent);
+    border: none; border-radius: 12px;
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 500;
+    cursor: pointer; margin-top: 8px;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.3); }
+  .btn-primary:active { transform: none; }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .btn-primary.loading { pointer-events: none; }
+  .btn-primary .btn-spinner {
+    display: none; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+  .btn-primary.loading .btn-label { display: none; }
+  .btn-primary.loading .btn-spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── session button ── */
+  .btn-session {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none; border-radius: 12px;
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 500;
+    cursor: pointer; margin-top: 8px;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-session:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(108,99,255,0.35); }
+
+  /* ── divider ── */
+  .section-divider {
+    height: 1px; background: var(--border);
+    margin: 28px 0;
+  }
+
+  /* ── delete zone ── */
+  .danger-zone {
+    margin-top: 4px;
+  }
+  .danger-title {
+    font-size: 0.78rem; font-weight: 500; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px;
+  }
+  .btn-delete {
+    width: 100%; padding: 12px;
+    background: none; border: 1px solid rgba(255,101,132,0.25);
+    border-radius: 11px; color: var(--red);
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+    cursor: pointer; transition: background 0.2s, border-color 0.2s;
+  }
+  .btn-delete:hover { background: rgba(255,101,132,0.07); border-color: var(--red); }
+
+  /* ── toast ── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1e1e2e; border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 20px;
+    font-size: 0.875rem; color: var(--text);
+    opacity: 0; transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none; z-index: 999; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(74,222,128,0.3); color: var(--green); }
+  .toast.error   { border-color: rgba(255,101,132,0.3); color: var(--red); }
+
+  /* ── error msg ── */
+  .error-msg {
+    margin-top: 14px; padding: 11px 14px;
+    background: rgba(255,101,132,0.07); border: 1px solid rgba(255,101,132,0.2);
+    border-radius: 10px; color: #ff8fa3; font-size: 0.83rem; line-height: 1.5;
+    display: none;
+  }
+  .error-msg.show { display: block; animation: fadein 0.25s ease; }
+  @keyframes fadein { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+
+  /* ── confirm overlay ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: center; justify-content: center;
+    animation: fadein 0.2s ease;
+  }
+  .overlay.show { display: flex; }
+  .confirm-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; padding: 36px 32px;
+    width: 340px; max-width: calc(100vw - 32px);
+    text-align: center;
+    animation: rise 0.3s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  .confirm-box h3 { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; }
+  .confirm-box p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 24px; }
+  .confirm-actions { display: flex; gap: 10px; }
+  .btn-cancel {
+    flex: 1; padding: 12px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; cursor: pointer; transition: border-color 0.2s;
+  }
+  .btn-cancel:hover { border-color: #2e2e45; }
+  .btn-confirm-delete {
+    flex: 1; padding: 12px; background: rgba(255,101,132,0.1);
+    border: 1px solid rgba(255,101,132,0.3); border-radius: 10px;
+    color: var(--red); font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-confirm-delete:hover { background: rgba(255,101,132,0.18); }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="card" id="card">
+  <div class="topbar">
+    <a class="logo" href="session.html">
+      <div class="logo-icon">☄️</div>
+      <div class="logo-text">Word<span>Comet</span></div>
+    </a>
+    <button class="btn-logout" onclick="logout()">Sign out</button>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loadingState" style="text-align:center; padding: 40px 0; color: var(--muted); font-size:0.9rem;">
+    Loading profile…
+  </div>
+
+  <!-- Profile content (hidden until loaded) -->
+  <div id="profileContent" style="display:none;">
+
+    <div class="avatar-row">
+      <div class="avatar" id="avatarEl"></div>
+      <div class="avatar-info">
+        <div id="avatarEmail" class="avatar-email"></div>
+        <div id="avatarUid"   class="avatar-uid"></div>
+      </div>
+    </div>
+
+    <h1 id="pageTitle">Your Profile</h1>
+    <p class="subtitle" id="pageSubtitle">Manage your name and role.</p>
+
+    <!-- Name field -->
+    <div class="field">
+      <label>Display Name</label>
+      <input type="text" id="nameInput" placeholder="What should we call you?" maxlength="40"/>
+    </div>
+
+    <!-- Role -->
+    <div class="field">
+      <label>Role</label>
+      <div class="role-grid">
+        <div class="role-card" id="roleTeacher" onclick="selectRole('mentor')">
+          <div class="role-icon">🎓</div>
+          <div class="role-name">Mentor</div>
+          <div class="role-desc">Teach a student</div>
+        </div>
+        <div class="role-card" id="roleStudent" onclick="selectRole('mentee')">
+          <div class="role-icon">📖</div>
+          <div class="role-name">Mentee</div>
+          <div class="role-desc">Learn from a mentor</div>
+        </div>
+      </div>
+      <div class="role-locked-note" id="roleLockedNote" style="display:none;">
+        <span class="lock-icon">🔒</span>
+        Role is locked. Delete your account to change it.
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- Save button (shown only when something is editable) -->
+    <button class="btn-primary" id="saveBtn" onclick="saveProfile()">
+      <span class="btn-label">Save Changes</span>
+      <div class="btn-spinner"></div>
+    </button>
+
+    <!-- Go to session (shown only when profile is complete) -->
+    <button class="btn-session" id="sessionBtn" onclick="goToSession()" style="display:none;">
+      ☄️ &nbsp;Start Session
+    </button>
+
+    <div class="section-divider"></div>
+
+    <div class="danger-zone">
+      <div class="danger-title">Danger Zone</div>
+      <button class="btn-delete" onclick="confirmDelete()">Delete my account</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Delete confirm overlay -->
+<div class="overlay" id="deleteOverlay">
+  <div class="confirm-box">
+    <h3>Delete account?</h3>
+    <p>This removes your name, role, and all data permanently. You cannot undo this.</p>
+    <div class="confirm-actions">
+      <button class="btn-cancel" onclick="closeOverlay()">Cancel</button>
+      <button class="btn-confirm-delete" onclick="deleteAccount()">Yes, delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp }                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ── Replace with your config ───────────────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_AUTH_DOMAIN",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId:             "YOUR_APP_ID",
+  };
+  const BASE_URL = "http://YOUR_VPS_IP:8011";
+  // ───────────────────────────────────────────────────────────────────
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  let currentUser  = null;   // Firebase user
+  let profileData  = null;   // DB user row
+  let selectedRole = null;
+  let roleIsLocked = false;
+
+  // ── Helpers ─────────────────────────────────────────────────────────
+
+  function showToast(msg, type = "") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove("show"), 2800);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("errorMsg");
+    el.textContent = msg;
+    el.classList.add("show");
+  }
+
+  function hideError() {
+    document.getElementById("errorMsg").classList.remove("show");
+  }
+
+  function initials(name) {
+    if (!name) return "?";
+    return name.trim().split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+  }
+
+  function renderAvatar(user, profile) {
+    const el = document.getElementById("avatarEl");
+    const pic = user.photoURL || profile?.profile_picture_url;
+    if (pic) {
+      el.innerHTML = `<img src="${pic}" alt="avatar"/>`;
+    } else {
+      el.textContent = initials(profile?.display_name || user.displayName || user.email);
+    }
+    document.getElementById("avatarEmail").textContent = user.email;
+    document.getElementById("avatarUid").textContent   = user.uid;
+  }
+
+  function renderRole(role) {
+    document.getElementById("roleTeacher").classList.remove("selected");
+    document.getElementById("roleStudent").classList.remove("selected");
+    if (role === "mentor") document.getElementById("roleTeacher").classList.add("selected");
+    if (role === "mentee") document.getElementById("roleStudent").classList.add("selected");
+    selectedRole = role;
+  }
+
+  function setRoleLocked(locked) {
+    roleIsLocked = locked;
+    document.getElementById("roleTeacher").classList.toggle("locked", locked);
+    document.getElementById("roleStudent").classList.toggle("locked", locked);
+    document.getElementById("roleLockedNote").style.display = locked ? "flex" : "none";
+  }
+
+  function updateButtons(isComplete) {
+    // If profile is complete (has name + role), show session button, hide save for role
+    // Save button always available for name edits
+    document.getElementById("sessionBtn").style.display = isComplete ? "block" : "none";
+    document.getElementById("saveBtn").style.display    = "block";
+
+    if (isComplete) {
+      document.getElementById("saveBtn").textContent = "Update Name";
+      document.getElementById("pageTitle").textContent    = "Your Profile";
+      document.getElementById("pageSubtitle").textContent = "Your role is locked. You can update your display name.";
+    } else {
+      document.getElementById("pageTitle").textContent    = "Set up your profile";
+      document.getElementById("pageSubtitle").textContent = "Choose your role — this cannot be changed later.";
+    }
+  }
+
+  // ── Load profile from DB ─────────────────────────────────────────────
+
+  async function loadProfile(firebaseUser) {
+    currentUser = firebaseUser;
+    const idToken = await firebaseUser.getIdToken();
+    localStorage.setItem("wc_id_token", idToken);
+
+    try {
+      const res = await fetch(`${BASE_URL}/profile/me`, {
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
+      if (res.status === 404) {
+        // User exists in Firebase but not in DB yet — auto-call login to register shell
+        await fetch(`${BASE_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_token: idToken }),
+        });
+        // Still no name/role — show setup UI
+        profileData = null;
+        showSetupUI(firebaseUser, null);
+        return;
+      }
+
+      if (!res.ok) throw new Error("Failed to load profile.");
+
+      profileData = await res.json();
+      localStorage.setItem("wc_user", JSON.stringify(profileData));
+
+      const isComplete = !!(profileData.display_name && profileData.role);
+      showSetupUI(firebaseUser, profileData, isComplete);
+
+    } catch (e) {
+      showToast("Could not load profile.", "error");
+    }
+  }
+
+  function showSetupUI(firebaseUser, profile, isComplete = false) {
+    document.getElementById("loadingState").style.display  = "none";
+    document.getElementById("profileContent").style.display = "block";
+
+    renderAvatar(firebaseUser, profile);
+
+    if (profile?.display_name) {
+      document.getElementById("nameInput").value = profile.display_name;
+    }
+
+    if (profile?.role) {
+      renderRole(profile.role);
+      setRoleLocked(true);
+    }
+
+    updateButtons(isComplete);
+  }
+
+  // ── Select role (only if not locked) ────────────────────────────────
+
+  window.selectRole = function(role) {
+    if (roleIsLocked) return;
+    renderRole(role);
+  };
+
+  // ── Save ─────────────────────────────────────────────────────────────
+
+  window.saveProfile = async function() {
+    hideError();
+    const name = document.getElementById("nameInput").value.trim();
+
+    if (!name) { showError("Display name cannot be empty."); return; }
+    if (!roleIsLocked && !selectedRole) { showError("Please select a role."); return; }
+
+    const btn = document.getElementById("saveBtn");
+    btn.classList.add("loading");
+
+    try {
+      const idToken = await currentUser.getIdToken();
+
+      // If first time (no role yet) → signup
+      if (!roleIsLocked && !profileData?.role) {
+        const res = await fetch(`${BASE_URL}/auth/signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id_token:     idToken,
+            role:         selectedRole,
+            display_name: name,
+          }),
+        });
+
+        if (res.status === 409) {
+          // Already signed up, just update name
+          await updateName(idToken, name);
+          return;
+        }
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Signup failed.");
+        }
+
+        const data = await res.json();
+        profileData = data.user;
+        localStorage.setItem("wc_user", JSON.stringify(profileData));
+        setRoleLocked(true);
+        updateButtons(true);
+        showToast("Profile saved! Welcome to WordComet 🎉", "success");
+
+      } else {
+        // Existing user — only update name
+        await updateName(idToken, name);
+      }
+
+    } catch (e) {
+      showError(e.message || "Something went wrong.");
+    } finally {
+      btn.classList.remove("loading");
+    }
+  };
+
+  async function updateName(idToken, name) {
+    const res = await fetch(`${BASE_URL}/profile/me`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ display_name: name }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Update failed.");
+    }
+    const data = await res.json();
+    profileData = data.user;
+    localStorage.setItem("wc_user", JSON.stringify(profileData));
+    showToast("Name updated ✓", "success");
+  }
+
+  // ── Session ──────────────────────────────────────────────────────────
+
+  window.goToSession = function() {
+    window.location.href = "session.html";
+  };
+
+  // ── Logout ───────────────────────────────────────────────────────────
+
+  window.logout = async function() {
+    await signOut(auth);
+    localStorage.clear();
+    window.location.href = "login.html";
+  };
+
+  // ── Delete ───────────────────────────────────────────────────────────
+
+  window.confirmDelete = function() {
+    document.getElementById("deleteOverlay").classList.add("show");
+  };
+
+  window.closeOverlay = function() {
+    document.getElementById("deleteOverlay").classList.remove("show");
+  };
+
+  window.deleteAccount = async function() {
+    closeOverlay();
+    try {
+      // You'll need a DELETE /profile/me endpoint on the backend
+      // For now we sign out and clear local data
+      // TODO: call DELETE /profile/me when endpoint is ready
+      await signOut(auth);
+      localStorage.clear();
+      window.location.href = "login.html";
+    } catch (e) {
+      showToast("Could not delete account.", "error");
+    }
+  };
+
+  // ── Auth gate ────────────────────────────────────────────────────────
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+    loadProfile(user);
+  });
+</script>
+</body>
+</html>

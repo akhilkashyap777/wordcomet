@@ -16,10 +16,14 @@ from dotenv import load_dotenv
 import httpx
 import uuid
 
+from fastapi.staticfiles import StaticFiles
+
 load_dotenv()
 
 import firebase_admin
 from firebase_admin import credentials, messaging
+
+from auth_profile import router as auth_router
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -73,6 +77,8 @@ current_word: dict | None = _load_word()
 # ─── App Setup ───────────────────────────────────────────────────────
 
 app = FastAPI(title="WordComet API")
+
+app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -566,6 +572,10 @@ async def signaling_endpoint(websocket: WebSocket, role: str = "student"):
                 waiting_students.remove(websocket)
                 print(f"👨‍🎓 Student left queue — {len(waiting_students)} remaining")
 
+
+# ______ static files _________________________________________________
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 # ─── Run ─────────────────────────────────────────────────────────────
 

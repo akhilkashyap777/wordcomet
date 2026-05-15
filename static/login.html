@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WordComet — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+
+<style>
+  :root {
+    --bg:        #0a0a0f;
+    --surface:   #111118;
+    --border:    #1e1e2e;
+    --accent:    #6c63ff;
+    --accent2:   #ff6584;
+    --text:      #e8e8f0;
+    --muted:     #5a5a72;
+    --card:      #14141f;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── background orbs ── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.18;
+    pointer-events: none;
+    animation: drift 14s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 520px; height: 520px; background: var(--accent);  top: -140px; left: -140px; animation-delay: 0s; }
+  .orb2 { width: 380px; height: 380px; background: var(--accent2); bottom: -100px; right: -80px; animation-delay: -5s; }
+  .orb3 { width: 260px; height: 260px; background: #38bdf8;        top: 50%; left: 55%; animation-delay: -9s; }
+
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(30px, 20px) scale(1.06); }
+  }
+
+  /* ── noise overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.035;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── card ── */
+  .card {
+    position: relative;
+    z-index: 10;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 52px 48px 44px;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 0 0 1px rgba(108,99,255,0.08), 0 32px 80px rgba(0,0,0,0.5);
+    animation: rise 0.6s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── logo ── */
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .logo-text span { color: var(--accent); }
+
+  /* ── heading ── */
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.85rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 300;
+    margin-bottom: 36px;
+    line-height: 1.5;
+  }
+
+  /* ── divider ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── google button ── */
+  .btn-google {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-google:hover {
+    background: #1a1a28;
+    border-color: #2e2e45;
+    transform: translateY(-1px);
+  }
+  .btn-google:active { transform: translateY(0); }
+  .btn-google svg { flex-shrink: 0; }
+
+  /* ripple */
+  .btn-google::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(108,99,255,0.15) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .btn-google:hover::after { opacity: 1; }
+
+  /* ── loading state ── */
+  .btn-google.loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .btn-google.loading .spinner { display: block; }
+  .btn-google.loading .btn-label { display: none; }
+  .btn-google.loading svg:first-child { display: none; }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── error ── */
+  .error-msg {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: rgba(255,101,132,0.08);
+    border: 1px solid rgba(255,101,132,0.2);
+    border-radius: 10px;
+    color: #ff8fa3;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    display: none;
+  }
+  .error-msg.show { display: block; animation: fadein 0.3s ease; }
+  @keyframes fadein { from { opacity:0; transform: translateY(-4px); } to { opacity:1; transform:none; } }
+
+  /* ── footer ── */
+  .footer {
+    margin-top: 32px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ── success flash ── */
+  .card.success {
+    border-color: rgba(108,99,255,0.4);
+    box-shadow: 0 0 0 1px rgba(108,99,255,0.2), 0 32px 80px rgba(0,0,0,0.5), 0 0 40px rgba(108,99,255,0.1);
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div class="card" id="card">
+
+  <div class="logo">
+    <div class="logo-icon">☄️</div>
+    <div class="logo-text">Word<span>Comet</span></div>
+  </div>
+
+  <h1>Welcome back</h1>
+  <p class="subtitle">Sign in to continue to your learning session.</p>
+
+  <button class="btn-google" id="googleBtn" onclick="handleGoogleLogin()">
+    <!-- Google icon -->
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+    <span class="btn-label">Continue with Google</span>
+    <div class="spinner"></div>
+  </button>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="footer">
+    By continuing you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+  </div>
+
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ── Replace with your Firebase config ──────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_AUTH_DOMAIN",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId:             "YOUR_APP_ID",
+  };
+  // ───────────────────────────────────────────────────────────────────
+
+  const BASE_URL = "http://YOUR_VPS_IP:8011"; // ← your FastAPI server
+
+  const firebaseApp = initializeApp(firebaseConfig);
+  const auth        = getAuth(firebaseApp);
+  const provider    = new GoogleAuthProvider();
+
+  function showError(msg) {
+    const el = document.getElementById("errorMsg");
+    el.textContent = msg;
+    el.classList.add("show");
+  }
+
+  function hideError() {
+    document.getElementById("errorMsg").classList.remove("show");
+  }
+
+  function setLoading(on) {
+    document.getElementById("googleBtn").classList.toggle("loading", on);
+  }
+
+  window.handleGoogleLogin = async function () {
+    hideError();
+    setLoading(true);
+
+    try {
+      // 1. Sign in with Google popup
+      const result   = await signInWithPopup(auth, provider);
+      const idToken  = await result.user.getIdToken();
+
+      // 2. Call your /auth/login endpoint
+      const res = await fetch(`${BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+
+      if (res.status === 404) {
+        // New user — go to signup/settings to set name + role
+        localStorage.setItem("wc_id_token", idToken);
+        localStorage.setItem("wc_firebase_uid", result.user.uid);
+        window.location.href = "settings.html";
+        return;
+      }
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Login failed.");
+      }
+
+      // 3. Existing user — store token and go to main app
+      const data = await res.json();
+      localStorage.setItem("wc_id_token", idToken);
+      localStorage.setItem("wc_user",     JSON.stringify(data.user));
+      document.getElementById("card").classList.add("success");
+
+      setTimeout(() => {
+        window.location.href = "session.html";
+      }, 400);
+
+    } catch (err) {
+      // Firebase popup closed by user
+      if (err.code === "auth/popup-closed-by-user") {
+        setLoading(false);
+        return;
+      }
+      showError(err.message || "Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  };
+</script>
+
+</body>
+</html>
