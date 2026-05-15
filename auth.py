@@ -373,7 +373,7 @@ def get_public_profile(
     finally:
         conn.close()
 
-@app.get("/status")
+@router.get("/status")
 async def server_status():
     return {
         "teachers_available": len(waiting_teachers),
