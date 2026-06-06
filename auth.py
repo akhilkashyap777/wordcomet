@@ -37,16 +37,39 @@ def get_db():
     )
 
 
+
+# test credentials error showing up
+# def get_db():
+#     return psycopg2.connect(
+#         dbname=os.environ.get("DB_NAME", "wordcomet_testenv"),
+#         user=os.environ.get("DB_USER", "wordcomet_user"),
+#         password=os.environ.get("DB_PASSWORD", ""),
+#         host=os.environ.get("DB_HOST", "69.62.78.126"),
+#         port=os.environ.get("DB_PORT", "5432"),
+#         cursor_factory=psycopg2.extras.RealDictCursor,
+#     )
+
+
 # ─── Auth Helper ─────────────────────────────────────────────────────
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    """Verify Firebase ID token and return decoded payload."""
     try:
+        print("TOKEN RECEIVED:")
+        print(credentials.credentials[:50])
+
         decoded = fb_auth.verify_id_token(credentials.credentials)
+
+        print("TOKEN VALID")
+        print(decoded)
+
         return decoded
-    except fb_auth.InvalidIdTokenError:
+
+    except fb_auth.InvalidIdTokenError as e:
+        print("INVALID TOKEN ERROR:", e)
         raise HTTPException(status_code=401, detail="Invalid or expired token.")
+
     except Exception as e:
+        print("GENERAL AUTH ERROR:", e)
         raise HTTPException(status_code=401, detail=f"Unauthorized: {str(e)}")
 
 
@@ -106,6 +129,10 @@ def signup(body: SignupBody):
     firebase_uid = decoded["uid"]
     email = decoded.get("email")
     picture = decoded.get("picture")
+
+    print("Decoded Firebase token:", decoded)
+    print("Firebase UID:", firebase_uid)
+    print("Email:", email)
 
     if not email:
         raise HTTPException(status_code=400, detail="Google account must have an email.")
@@ -174,6 +201,10 @@ def login(body: LoginBody):
     firebase_uid = decoded["uid"]
     email = decoded.get("email")
     picture = decoded.get("picture")
+
+    print("Decoded Firebase token:", decoded)
+    print("Firebase UID:", firebase_uid)
+    print("Email:", email)
 
     conn = get_db()
     try:

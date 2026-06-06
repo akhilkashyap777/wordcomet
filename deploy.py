@@ -15,8 +15,9 @@ from typing import Optional
 from dotenv import load_dotenv
 import httpx
 import uuid
-
+from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
+# from database import db_session
 
 load_dotenv()
 
@@ -24,10 +25,18 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 
 from auth import router as auth_router
+from friends import router as friends_router, db_session
+from challenges import router as challenges_router
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# live credentials
 SERVICE_ACCOUNT_JSON = os.path.join(BASE_DIR, "wordcomet.json")
+
+# test firebase credentials
+# SERVICE_ACCOUNT_JSON = os.path.join(BASE_DIR, "wordcomet-testenv.json")
+
 TOKEN_STORE_FILE = os.path.join(BASE_DIR, "fcm_tokens.json")
 WORD_STORE_FILE = os.path.join(BASE_DIR, "current_word.json")
 
@@ -76,9 +85,18 @@ current_word: dict | None = _load_word()
 
 # ─── App Setup ───────────────────────────────────────────────────────
 
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     # This block runs BEFORE the server starts up (Startup)
+#     await db_session.connect()
+#     yield
+
 app = FastAPI(title="WordComet API")
+# app = FastAPI(title="WordComet API", lifespan=lifespan)
 
 app.include_router(auth_router)
+app.include_router(friends_router)
+app.include_router(challenges_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -87,6 +105,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+#__ database 500 fix for firends search _______
+
+@app.on_event("startup")
+async def startup():
+    await db_session.connect()
+    print("✅ Friends DB pool connected")
+
+@app.on_event("shutdown")
+async def shutdown():
+    if db_session.pool:
+        await db_session.pool.close()
+        print("✅ Friends DB pool closed")
+
+@app.on_event("shutdown")
+async def shutdown():
+    await db_session.disconnect()
 
 # ─── Auth Helper ─────────────────────────────────────────────────────
 

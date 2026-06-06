@@ -272,18 +272,34 @@
   import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   // ── Replace with your Firebase config ──────────────────────────────
+  // __ Live credentials ____
+  // const firebaseConfig = {
+  //   apiKey: "AIzaSyDD0z45h-E_FZTkbjpwm3TJMqNTbSub0B0",
+  //   authDomain: "wordcomet.firebaseapp.com",
+  //   projectId: "wordcomet",
+  //   storageBucket: "wordcomet.firebasestorage.app",
+  //   messagingSenderId: "218267654833",
+  //   appId: "1:218267654833:web:1216a59da0632a89d7a090",
+  //   measurementId: "G-NHRYJRJZ0G"
+  // };
+
+  // __ test credentials _____
   const firebaseConfig = {
-    apiKey: "AIzaSyDD0z45h-E_FZTkbjpwm3TJMqNTbSub0B0",
-    authDomain: "wordcomet.firebaseapp.com",
-    projectId: "wordcomet",
-    storageBucket: "wordcomet.firebasestorage.app",
-    messagingSenderId: "218267654833",
-    appId: "1:218267654833:web:1216a59da0632a89d7a090",
-    measurementId: "G-NHRYJRJZ0G"
+    apiKey: "AIzaSyAsaTYBk2ypXS4iYzrNCi4Z-aLwq9rCT_8",
+    authDomain: "wordcomet-testenv.firebaseapp.com",
+    projectId: "wordcomet-testenv",
+    storageBucket: "wordcomet-testenv.firebasestorage.app",
+    messagingSenderId: "31826666668",
+    appId: "1:31826666668:web:4a6f203129577f40962b09",
+    measurementId: "G-XRW0S53HG0"
   };
   // ───────────────────────────────────────────────────────────────────
 
-  const BASE_URL = "https://wordcomet.shyapsneon.tech"; // ← your FastAPI server
+  // live url
+  // const BASE_URL = "https://wordcomet.shyapsneon.tech"; // ← your FastAPI server
+
+  // test url
+  const BASE_URL = "http://127.0.0.1:8011";
 
   const firebaseApp = initializeApp(firebaseConfig);
   const auth        = getAuth(firebaseApp);
@@ -310,9 +326,10 @@
     try {
       // 1. Sign in with Google popup
       const result   = await signInWithPopup(auth, provider);
-      const idToken  = await result.user.getIdToken();
+      const idToken  = await result.user.getIdToken(true);
 
       // 2. Call your /auth/login endpoint
+      console.log("Calling login URL:", `${BASE_URL}/auth/login`);
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -328,8 +345,10 @@
       }
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Login failed.");
+        let errText = await res.text();
+        console.log("LOGIN STATUS:", res.status);
+        console.log("LOGIN ERROR BODY:", errText);
+        throw new Error(`Login failed: ${res.status} - ${errText}`);
       }
 
       // 3. Existing user — store token and go to main app

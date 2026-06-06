@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WordComet — Friends</title>
+
+<style>
+:root{
+    --bg:#0a0a0f;
+    --card:#14141f;
+    --surface:#111118;
+    --border:#1e1e2e;
+    --text:#e8e8f0;
+    --muted:#5a5a72;
+    --accent:#6c63ff;
+    --green:#4ade80;
+    --red:#ff6584;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:Arial, sans-serif;
+    padding:30px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.back-btn{
+    background:var(--surface);
+    color:var(--text);
+    border:1px solid var(--border);
+    padding:10px 15px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.tabs{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.tab-btn{
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 16px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.tab-btn.active{
+    background:var(--accent);
+    border-color:var(--accent);
+}
+
+.tab-content{
+    display:none;
+}
+
+.tab-content.active{
+    display:block;
+}
+
+.card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:15px;
+    margin-bottom:12px;
+}
+
+.card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.name{
+    font-size:18px;
+    font-weight:bold;
+}
+
+.role{
+    color:var(--muted);
+    margin-top:5px;
+    font-size:14px;
+}
+
+.actions{
+    margin-top:10px;
+    display:flex;
+    gap:10px;
+}
+
+.btn{
+    padding:8px 12px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.btn-primary{
+    background:var(--accent);
+    color:white;
+}
+
+.btn-success{
+    background:var(--green);
+    color:black;
+}
+
+.btn-danger{
+    background:var(--red);
+    color:white;
+}
+
+.search-box{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.search-box input{
+    flex:1;
+    padding:12px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+}
+
+.empty{
+    text-align:center;
+    color:var(--muted);
+    padding:30px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>👥 Friends</h1>
+
+        <button class="back-btn" onclick="window.location.href='settings.html'">
+            ← Back
+        </button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('friends')">
+            Friends
+        </button>
+
+        <button class="tab-btn" onclick="showTab('requests')">
+            Requests
+        </button>
+
+        <button class="tab-btn" onclick="showTab('search')">
+            Search Users
+        </button>
+    </div>
+
+    <!-- FRIENDS TAB -->
+    <div id="friends" class="tab-content active">
+
+        <div id="friendsList">
+
+            <!-- Example -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="name">John Doe</div>
+                        <div class="role">Mentor</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- REQUESTS TAB -->
+    <div id="requests" class="tab-content">
+
+        <div id="requestsList">
+
+            <!-- Example -->
+            <div class="card">
+                <div class="name">Alex Smith</div>
+
+                <div class="actions">
+                    <button class="btn btn-success">
+                        Accept
+                    </button>
+
+                    <button class="btn btn-danger">
+                        Decline
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- SEARCH TAB -->
+    <div id="search" class="tab-content">
+
+        <div class="search-box">
+
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search users..."
+            >
+
+            <button class="btn btn-primary" onclick="searchUsers()">
+                Search
+            </button>
+
+        </div>
+
+        <div id="searchResults">
+
+            <!-- Example -->
+            <div class="card">
+                <div class="name">Sarah Wilson</div>
+
+                <div class="actions">
+                    <button class="btn btn-primary">
+                        Add Friend
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function showTab(tabName){
+
+    document.querySelectorAll('.tab-content').forEach(tab=>{
+        tab.classList.remove('active');
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+        btn.classList.remove('active');
+    });
+
+    document.getElementById(tabName).classList.add('active');
+
+    event.target.classList.add('active');
+}
+</script>
+
+<script>
+const BASE_URL = "http://127.0.0.1:8011";
+
+async function searchUsers() {
+    const q = document.getElementById("searchInput").value.trim();
+    const resultsBox = document.getElementById("searchResults");
+
+    if (!q) {
+        resultsBox.innerHTML = `<div class="empty">Type a name to search.</div>`;
+        return;
+    }
+
+    const token = localStorage.getItem("wc_id_token");
+
+    if (!token) {
+        resultsBox.innerHTML = `<div class="empty">Please login again.</div>`;
+        return;
+    }
+
+    resultsBox.innerHTML = `<div class="empty">Searching...</div>`;
+
+    try {
+        const res = await fetch(`${BASE_URL}/friends/search?q=${encodeURIComponent(q)}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText);
+        }
+
+        const users = await res.json();
+
+        if (!users.length) {
+            resultsBox.innerHTML = `<div class="empty">No users found.</div>`;
+            return;
+        }
+
+        resultsBox.innerHTML = users.map(user => `
+            <div class="card">
+                <div class="name">${user.display_name || user.full_name || "Unknown User"}</div>
+                <div class="role">${user.email || ""}</div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="sendFriendRequest(${user.id})">
+                        Add Friend
+                    </button>
+                </div>
+            </div>
+        `).join("");
+
+    } catch (err) {
+        console.error(err);
+        resultsBox.innerHTML = `<div class="empty">Search failed.</div>`;
+    }
+}
+</script>
+
+<script>
+    async function sendFriendRequest(userId) {
+
+    const token = localStorage.getItem("wc_id_token");
+
+    if (!token) {
+        alert("Please login again.");
+        return;
+    }
+
+    try {
+
+        const res = await fetch(`${BASE_URL}/friends/request`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                to_user_id: userId
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.detail || data.message || "Failed");
+        }
+
+        alert("Friend request sent!");
+
+    } catch (err) {
+        console.error(err);
+        alert(err.message);
+    }
+}
+</script>
+</body>
+</html>
