@@ -27,6 +27,7 @@ from firebase_admin import credentials, messaging
 from auth import router as auth_router
 from friends import router as friends_router, db_session
 from challenges import router as challenges_router
+from websocket_routes import router as websocket_router
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -97,6 +98,7 @@ app = FastAPI(title="WordComet API")
 app.include_router(auth_router)
 app.include_router(friends_router)
 app.include_router(challenges_router)
+app.include_router(websocket_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -453,159 +455,6 @@ def send_quiz_notification(quiz_data: dict, featured_index: int = 0):
         _save_tokens(fcm_tokens)
 
     print(f"   📬 Quiz notif sent to {success_count} device(s).")
-
-
-# ─── WebRTC Signaling ────────────────────────────────────────────────
-
-# Queues for waiting teachers and students
-waiting_teachers: list[WebSocket] = []
-waiting_students: list[WebSocket] = []
-
-# Active rooms: room_id → {teacher: WebSocket, student: WebSocket}
-active_rooms: dict[str, dict] = {}
-
-# Track which room each websocket belongs to
-socket_to_room: dict[WebSocket, str] = {}
-# Track role of each socket
-socket_to_role: dict[WebSocket, str] = {}
-
-
-async def try_pair():
-    """If there's at least one teacher and one student waiting, pair them."""
-    if waiting_teachers and waiting_students:
-        teacher = waiting_teachers.pop(0)
-        student = waiting_students.pop(0)
-
-        room_id = str(uuid.uuid4())
-        active_rooms[room_id] = {"teacher": teacher, "student": student}
-        socket_to_room[teacher] = room_id
-        socket_to_room[student] = room_id
-
-        await teacher.send_text(f'{{"type":"paired","role":"teacher","room_id":"{room_id}"}}')
-        await student.send_text(f'{{"type":"paired","role":"student","room_id":"{room_id}"}}')
-        print(f"✅ Paired teacher + student in room {room_id}")
-
-
-async def put_back_in_queue(websocket: WebSocket, role: str):
-    """Put a peer back in queue after their partner disconnected."""
-    try:
-        await websocket.send_text(f'{{"type":"waiting","role":"{role}","reason":"partner_left"}}')
-        if role == "teacher":
-            waiting_teachers.append(websocket)
-            print(f"👨‍🏫 Teacher back in queue — {len(waiting_teachers)} waiting")
-        else:
-            waiting_students.append(websocket)
-            print(f"👨‍🎓 Student back in queue — {len(waiting_students)} waiting")
-    except:
-        # peer also disconnected, just ignore
-        pass
-
-
-@app.get("/turn-credentials")
-async def get_turn_credentials():
-    """Generate short-lived TURN credentials for a client."""
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"https://rtc.live.cloudflare.com/v1/turn/keys/{TURN_TOKEN_ID}/credentials/generate-ice-servers",
-            headers={
-                "Authorization": f"Bearer {TURN_API_TOKEN}",
-                "Content-Type": "application/json",
-            },
-            json={"ttl": 86400}
-        )
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to get TURN credentials.")
-    return response.json()
-
-
-@app.websocket("/ws/signal")
-async def signaling_endpoint(websocket: WebSocket, role: str = "student"):
-    """
-    Round-robin matchmaking signaling.
-    Connect as: ws://localhost:8011/ws/signal?role=teacher
-            or: ws://localhost:8011/ws/signal?role=student
-    
-    Flow:
-    1. Peer connects with role
-    2. Server puts them in queue and sends {"type":"waiting"}
-    3. When a teacher+student are both in queue, server pairs them
-    4. Both get {"type":"paired","role":"...","room_id":"..."}
-    5. Peers exchange SDP/ICE through server
-    6. If one disconnects, the other goes back to queue automatically
-    """
-    if role not in ("teacher", "student"):
-        await websocket.close(code=1008, reason="role must be teacher or student")
-        return
-
-    await websocket.accept()
-    socket_to_role[websocket] = role
-
-    # add to queue
-    if role == "teacher":
-        waiting_teachers.append(websocket)
-        print(f"👨‍🏫 Teacher joined queue — {len(waiting_teachers)} waiting")
-    else:
-        waiting_students.append(websocket)
-        print(f"👨‍🎓 Student joined queue — {len(waiting_students)} waiting")
-
-    # notify client they are waiting
-    await websocket.send_text(f'{{"type":"waiting","role":"{role}"}}')
-
-    # try to pair immediately
-    await try_pair()
-
-    try:
-        while True:
-            data = await websocket.receive_text()
-            room_id = socket_to_room.get(websocket)
-
-            if not room_id:
-                # not paired yet, ignore messages
-                continue
-
-            if room_id not in active_rooms:
-                continue
-
-            # relay message to the other peer
-            room = active_rooms[room_id]
-            peer = room["student"] if websocket == room["teacher"] else room["teacher"]
-
-            try:
-                await peer.send_text(data)
-            except:
-                # peer connection broken
-                pass
-
-    except WebSocketDisconnect:
-        print(f"🔌 {role} disconnected")
-        room_id = socket_to_room.pop(websocket, None)
-        socket_to_role.pop(websocket, None)
-
-        if room_id and room_id in active_rooms:
-            # was in an active room
-            room = active_rooms.pop(room_id)
-            peer = room["student"] if websocket == room["teacher"] else room["teacher"]
-            peer_role = "student" if websocket == room["teacher"] else "teacher"
-
-            # clean up peer's room mapping
-            socket_to_room.pop(peer, None)
-
-            print(f"👋 Room {room_id} closed — putting {peer_role} back in queue")
-
-            # put the remaining peer back in queue
-            await put_back_in_queue(peer, peer_role)
-
-            # try to pair the re-queued peer with someone new
-            await try_pair()
-
-        else:
-            # was still in queue, just remove
-            if websocket in waiting_teachers:
-                waiting_teachers.remove(websocket)
-                print(f"👨‍🏫 Teacher left queue — {len(waiting_teachers)} remaining")
-            if websocket in waiting_students:
-                waiting_students.remove(websocket)
-                print(f"👨‍🎓 Student left queue — {len(waiting_students)} remaining")
 
 
 # ______ static files _________________________________________________

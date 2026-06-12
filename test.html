@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WordComet Signal Tester</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #111; color: #eee; }
+    .panels { display: flex; gap: 20px; }
+    .panel { flex: 1; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 16px; }
+    .panel h3 { margin: 0 0 10px; font-size: 14px; }
+    .log { height: 220px; overflow-y: auto; background: #0d0d0d; padding: 10px; border-radius: 4px; font-size: 12px; }
+    .log div { padding: 2px 0; border-bottom: 1px solid #1a1a1a; }
+    .recv { color: #4ea8ff; }
+    .sent { color: #4eff88; }
+    .err  { color: #ff4e4e; }
+    .sys  { color: #888; }
+    .warn { color: #ffb347; }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+    .idle    { background: #333; color: #aaa; }
+    .waiting { background: #5a3e00; color: #ffb347; }
+    .paired  { background: #003a1a; color: #4eff88; }
+    .error   { background: #3a0000; color: #ff4e4e; }
+    .reconnecting { background: #1a2a4a; color: #4ea8ff; }
+    .room { font-size: 11px; color: #888; margin: 4px 0 8px; min-height: 14px; word-break: break-all; }
+    .btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    button { background: #222; color: #eee; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    button:hover { background: #333; }
+    button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .global { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    #url-input { background: #1a1a1a; color: #eee; border: 1px solid #444; padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 12px; width: 340px; }
+    #pair-status { font-size: 12px; color: #888; margin-left: auto; }
+  </style>
+</head>
+<body>
+
+<div class="global">
+  <input id="url-input" type="text" value="ws://localhost:8011/ws/signal" />
+  <button onclick="connectBoth()">connect both</button>
+  <button onclick="disconnectBoth()">disconnect both</button>
+  <button onclick="clearLogs()">clear logs</button>
+  <span id="pair-status"></span>
+</div>
+
+<div class="panels">
+
+  <div class="panel">
+    <h3>teacher <span class="badge idle" id="teacher-badge">idle</span></h3>
+    <div class="room" id="teacher-room"></div>
+    <div class="log" id="teacher-log"></div>
+    <div class="btns">
+      <button onclick="connect('teacher')" id="btn-teacher-connect">connect</button>
+      <button onclick="disconnect('teacher')" id="btn-teacher-disc" disabled>disconnect</button>
+      <button onclick="sendMsg('teacher', 'ping')" id="btn-teacher-ping" disabled>send ping</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>student <span class="badge idle" id="student-badge">idle</span></h3>
+    <div class="room" id="student-room"></div>
+    <div class="log" id="student-log"></div>
+    <div class="btns">
+      <button onclick="connect('student')" id="btn-student-connect">connect</button>
+      <button onclick="disconnect('student')" id="btn-student-disc" disabled>disconnect</button>
+      <button onclick="sendMsg('student', 'ping')" id="btn-student-ping" disabled>send ping</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const sockets = { teacher: null, student: null };
+
+  function getUrl(role) {
+    const base = document.getElementById('url-input').value.trim();
+    return base + (base.includes('?') ? '&' : '?') + 'role=' + role;
+  }
+
+  function log(role, msg, type) {
+    const el = document.getElementById(role + '-log');
+    const d = document.createElement('div');
+    d.className = type || 'sys';
+    const t = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    d.textContent = t + '  ' + msg;
+    el.appendChild(d);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function setBadge(role, state) {
+    const b = document.getElementById(role + '-badge');
+    b.className = 'badge ' + state;
+    b.textContent = state;
+  }
+
+  function setButtons(role, connected) {
+    document.getElementById('btn-' + role + '-connect').disabled = connected;
+    document.getElementById('btn-' + role + '-disc').disabled = !connected;
+    document.getElementById('btn-' + role + '-ping').disabled = !connected;
+  }
+
+  function setRoom(role, text) {
+    document.getElementById(role + '-room').textContent = text;
+  }
+
+  function checkBothPaired() {
+    const t = document.getElementById('teacher-badge').textContent;
+    const s = document.getElementById('student-badge').textContent;
+    const ps = document.getElementById('pair-status');
+    if (t === 'paired' && s === 'paired') {
+      ps.textContent = '✓ both paired';
+      ps.style.color = '#4eff88';
+    } else {
+      ps.textContent = '';
+    }
+  }
+
+  function connect(role) {
+    if (sockets[role]) return;
+    const url = getUrl(role);
+    log(role, 'connecting → ' + url, 'sys');
+    setBadge(role, 'waiting');
+
+    let ws;
+    try { ws = new WebSocket(url); }
+    catch(e) { log(role, 'error: ' + e.message, 'err'); setBadge(role, 'error'); return; }
+
+    sockets[role] = ws;
+    setButtons(role, true);
+
+    ws.onopen = () => {
+      log(role, 'socket opened', 'sys');
+    };
+
+    ws.onmessage = (e) => {
+      log(role, '← ' + e.data, 'recv');
+      try {
+        const msg = JSON.parse(e.data);
+
+        if (msg.type === 'waiting') {
+          if (msg.reason === 'partner_left') {
+            // partner dropped — stay connected, wait for new match
+            setBadge(role, 'reconnecting');
+            setRoom(role, '');
+            log(role, '⚠ partner left — waiting for new match...', 'warn');
+          } else {
+            setBadge(role, 'waiting');
+            setRoom(role, '');
+          }
+        }
+
+        if (msg.type === 'paired') {
+          setBadge(role, 'paired');
+          setRoom(role, 'room: ' + msg.room_id);
+          log(role, '✓ paired in room ' + msg.room_id, 'sys');
+          checkBothPaired();
+        }
+
+      } catch(e) {}
+    };
+
+    ws.onerror = () => {
+      log(role, 'socket error', 'err');
+      setBadge(role, 'error');
+    };
+
+    ws.onclose = (e) => {
+      log(role, 'closed (code ' + e.code + ')', 'sys');
+      sockets[role] = null;
+      setButtons(role, false);
+      setBadge(role, 'idle');
+      setRoom(role, '');
+      checkBothPaired();
+    };
+  }
+
+  function disconnect(role) {
+    if (sockets[role]) { sockets[role].close(); }
+  }
+
+  function sendMsg(role, msg) {
+    if (!sockets[role]) return;
+    sockets[role].send(msg);
+    log(role, '→ ' + msg, 'sent');
+  }
+
+  function connectBoth() {
+    connect('teacher');
+    setTimeout(() => connect('student'), 300);
+  }
+
+  function disconnectBoth() {
+    disconnect('teacher');
+    disconnect('student');
+  }
+
+  function clearLogs() {
+    ['teacher', 'student'].forEach(r => {
+      document.getElementById(r + '-log').innerHTML = '';
+      setRoom(r, '');
+      setBadge(r, 'idle');
+    });
+    document.getElementById('pair-status').textContent = '';
+  }
+</script>
+</body>
+</html>

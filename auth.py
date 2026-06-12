@@ -94,9 +94,21 @@ class UpdateProfileBody(BaseModel):
     profile_picture_url: Optional[str] = None
     preferred_language: Optional[str] = None
     timezone: Optional[str] = None
-    notification_time: Optional[str] = None  # "HH:MM" format
+    notification_time: Optional[str] = None
     notifications_enabled: Optional[bool] = None
 
+    # mentor fields
+    interview_field: Optional[str] = None
+    interview_subjects: Optional[list[str]] = None
+    bio: Optional[str] = None
+
+    # mentee fields
+    learning_goal: Optional[str] = None
+
+class RateMentorBody(BaseModel):
+    mentor_id: int
+    rating: int
+    comment: Optional[str] = None
 
 # ─── 1. Signup ───────────────────────────────────────────────────────
 
@@ -313,6 +325,21 @@ def update_my_profile(
     """
     firebase_uid = current_user["uid"]
 
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT role FROM users WHERE firebase_uid = %s",
+        (firebase_uid,)
+    )
+
+    db_user = cur.fetchone()
+
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    role = db_user["role"]
+
     # Build dynamic SET clause from only provided fields
     fields = {}
     if body.display_name is not None:
@@ -331,6 +358,25 @@ def update_my_profile(
         fields["notification_time"] = body.notification_time
     if body.notifications_enabled is not None:
         fields["notifications_enabled"] = body.notifications_enabled
+    if body.interview_field is not None:
+        if role != "mentor":
+            raise HTTPException(status_code=403, detail="Only mentors can update interview_field.")
+        fields["interview_field"] = body.interview_field
+
+    if body.interview_subjects is not None:
+        if role != "mentor":
+            raise HTTPException(status_code=403, detail="Only mentors can update interview_subjects.")
+        fields["interview_subjects"] = body.interview_subjects
+
+    if body.bio is not None:
+        if role != "mentor":
+            raise HTTPException(status_code=403, detail="Only mentors can update bio.")
+        fields["bio"] = body.bio
+
+    if body.learning_goal is not None:
+        if role != "mentee":
+            raise HTTPException(status_code=403, detail="Only mentees can update learning_goal.")
+        fields["learning_goal"] = body.learning_goal
 
     if not fields:
         raise HTTPException(status_code=400, detail="No fields provided to update.")
@@ -363,6 +409,100 @@ def update_my_profile(
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
+    finally:
+        conn.close()
+
+@router.post("/mentors/rate")
+def rate_mentor(
+    body: RateMentorBody,
+    current_user: dict = Depends(get_current_user)
+):
+    firebase_uid = current_user["uid"]
+
+    if body.rating < 1 or body.rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5.")
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+
+        # logged-in user must be mentee
+        cur.execute("SELECT id, role FROM users WHERE firebase_uid = %s", (firebase_uid,))
+        mentee = cur.fetchone()
+
+        if not mentee:
+            raise HTTPException(status_code=404, detail="Mentee not found.")
+
+        if mentee["role"] != "mentee":
+            raise HTTPException(status_code=403, detail="Only mentees can rate mentors.")
+
+        # target user must be mentor
+        cur.execute("SELECT id, role FROM users WHERE id = %s", (body.mentor_id,))
+        mentor = cur.fetchone()
+
+        if not mentor:
+            raise HTTPException(status_code=404, detail="Mentor not found.")
+
+        if mentor["role"] != "mentor":
+            raise HTTPException(status_code=400, detail="You can only rate mentors.")
+
+        # insert or update rating
+        cur.execute("""
+            INSERT INTO mentor_reviews (mentor_id, mentee_id, rating, comment)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (mentor_id, mentee_id)
+            DO UPDATE SET
+                rating = EXCLUDED.rating,
+                comment = EXCLUDED.comment,
+                created_at = NOW()
+            RETURNING *
+        """, (
+            body.mentor_id,
+            mentee["id"],
+            body.rating,
+            body.comment
+        ))
+
+        review = dict(cur.fetchone())
+
+        # update mentor average
+        cur.execute("""
+            UPDATE users
+            SET
+                average_rating = (
+                    SELECT ROUND(AVG(rating)::numeric, 2)
+                    FROM mentor_reviews
+                    WHERE mentor_id = %s
+                ),
+                rating_count = (
+                    SELECT COUNT(*)
+                    FROM mentor_reviews
+                    WHERE mentor_id = %s
+                ),
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING id, display_name, average_rating, rating_count
+        """, (
+            body.mentor_id,
+            body.mentor_id,
+            body.mentor_id
+        ))
+
+        mentor_rating = dict(cur.fetchone())
+
+        conn.commit()
+
+        return {
+            "status": "rated",
+            "review": review,
+            "mentor": mentor_rating
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Rating failed: {str(e)}")
     finally:
         conn.close()
 
