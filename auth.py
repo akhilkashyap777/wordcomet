@@ -544,10 +544,27 @@ def get_public_profile(
     finally:
         conn.close()
 
-@router.get("/status")
-async def server_status():
-    return {
-        "teachers_available": len(waiting_teachers),
-        "students_waiting":   len(waiting_students),
-        "active_sessions":    len(active_rooms),
-    }
+@router.get("/mentors")
+def list_mentors(current_user: dict = Depends(get_current_user)):
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                id,
+                display_name,
+                full_name,
+                profile_picture_url,
+                bio,
+                interview_field,
+                interview_subjects,
+                average_rating,
+                rating_count
+            FROM users
+            WHERE role = 'mentor'
+              AND is_active = TRUE
+            ORDER BY average_rating DESC NULLS LAST, display_name ASC
+        """)
+        return {"mentors": [dict(row) for row in cur.fetchall()]}
+    finally:
+        conn.close()

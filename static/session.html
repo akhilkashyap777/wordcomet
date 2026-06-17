@@ -440,6 +440,10 @@
       <div class="peer-status">● connected</div>
     </div>
 
+    <video id="remoteScreen" autoplay playsinline></video>
+
+    <button onclick="startScreenShare()">Share Screen</button>
+
     <div class="signal-log" id="signalLog">
       <div class="log-line"><span class="log-time">--:--:--</span><span class="log-sys">Session started</span></div>
     </div>
@@ -448,6 +452,8 @@
       <input class="msg-input" id="msgInput" placeholder="Send a signal message…" onkeydown="if(event.key==='Enter') sendMsg()"/>
       <button class="btn-send" onclick="sendMsg()">Send</button>
     </div>
+
+    
 
     <button class="btn-end" onclick="endSession()">End Session</button>
   </div>
@@ -461,28 +467,29 @@
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   // ── Config — replace these ─────────────────────────────────────────
-  // const firebaseConfig = {
-  //   apiKey: "AIzaSyDD0z45h-E_FZTkbjpwm3TJMqNTbSub0B0",
-  //   authDomain: "wordcomet.firebaseapp.com",
-  //   projectId: "wordcomet",
-  //   storageBucket: "wordcomet.firebasestorage.app",
-  //   messagingSenderId: "218267654833",
-  //   appId: "1:218267654833:web:1216a59da0632a89d7a090",
-  //   measurementId: "G-NHRYJRJZ0G"
-  // };
-  // __ test credentials _____
   const firebaseConfig = {
-    apiKey: "AIzaSyAsaTYBk2ypXS4iYzrNCi4Z-aLwq9rCT_8",
-    authDomain: "wordcomet-testenv.firebaseapp.com",
-    projectId: "wordcomet-testenv",
-    storageBucket: "wordcomet-testenv.firebasestorage.app",
-    messagingSenderId: "31826666668",
-    appId: "1:31826666668:web:4a6f203129577f40962b09",
-    measurementId: "G-XRW0S53HG0"
+    apiKey: "AIzaSyDD0z45h-E_FZTkbjpwm3TJMqNTbSub0B0",
+    authDomain: "wordcomet.firebaseapp.com",
+    projectId: "wordcomet",
+    storageBucket: "wordcomet.firebasestorage.app",
+    messagingSenderId: "218267654833",
+    appId: "1:218267654833:web:1216a59da0632a89d7a090",
+    measurementId: "G-NHRYJRJZ0G"
   };
-  //const BASE_URL = "https://wordcomet.shyapsneon.tech";
-  const BASE_URL = "http://127.0.0.1:8011;
+  // __ test credentials _____
+  // const firebaseConfig = {
+  //   apiKey: "AIzaSyAsaTYBk2ypXS4iYzrNCi4Z-aLwq9rCT_8",
+  //   authDomain: "wordcomet-testenv.firebaseapp.com",
+  //   projectId: "wordcomet-testenv",
+  //   storageBucket: "wordcomet-testenv.firebasestorage.app",
+  //   messagingSenderId: "31826666668",
+  //   appId: "1:31826666668:web:4a6f203129577f40962b09",
+  //   measurementId: "G-XRW0S53HG0"
+  // };
+  const BASE_URL = "https://wordcomet.shyapsneon.tech";
+  // const BASE_URL = "http://127.0.0.1:8011";
   const WS_URL = "wss://wordcomet.shyapsneon.tech";
+  // const WS_URL = "ws://127.0.0.1:8011";
   // ───────────────────────────────────────────────────────────────────
 
   const fbApp = initializeApp(firebaseConfig);
@@ -491,12 +498,12 @@
   let firebaseUser = null;
   let userProfile  = null;   // from localStorage
   let ws           = null;
-  let wsRole       = null;   // "teacher" or "student" (mapped from mentor/mentee)
   let currentRoomId = null;
+  let pc = null;
+  let localScreenStream = null;
 
   // ── Role mapping ────────────────────────────────────────────────────
   // DB stores mentor/mentee — WebSocket uses teacher/student
-  const ROLE_MAP = { mentor: "teacher", mentee: "student" };
   const ROLE_LABEL = { mentor: "Mentor", mentee: "Mentee" };
   const ROLE_ICON  = { mentor: "🎓",    mentee: "📖" };
   const PEER_LABEL = { mentor: "Mentee", mentee: "Mentor" };
@@ -590,7 +597,6 @@
 
   function setupIdleUI() {
     const role = userProfile.role;
-    wsRole     = ROLE_MAP[role];
 
     // Topbar chip
     const chip = document.getElementById("userChip");
@@ -620,104 +626,49 @@
 
   // ── Connect ──────────────────────────────────────────────────────────
 
-  window.connect = async function() {
-    if (!firebaseUser) return;
-    const idToken = await firebaseUser.getIdToken(true);
+  function onJoinedBookedRoom(msg) {
+    showState("statePaired");
 
-    showState("stateWaiting");
+    document.getElementById("roomIdLabel").textContent =
+      `room: ${msg.room.slice(0, 12)}…`;
 
-    const role = userProfile.role;
-    if (role === "mentor") {
-      document.getElementById("waitingLabel").textContent = "Waiting for a mentee…";
-      document.getElementById("waitingSub").textContent   = "You're in the queue. We'll pair you as soon as a mentee joins.";
-    } else {
-      document.getElementById("waitingLabel").textContent = "Finding a mentor…";
-      document.getElementById("waitingSub").textContent   = "Hang tight — we're matching you with an available mentor.";
-    }
+    const myRole = userProfile.role;
+    const peerRole = PEER_LABEL[myRole];
 
-    // Connect WebSocket — pass Firebase token + role
-    const url = `${WS_URL}/ws/signal?role=${wsRole}&token=${encodeURIComponent(idToken)}`;
-    ws = new WebSocket(url);
+    document.getElementById("peerAvatar").textContent =
+      peerRole === "Mentor" ? "🎓" : "📖";
 
-    ws.onopen = () => {
-      appendLog("WebSocket connected", "sys");
-    };
+    document.getElementById("peerName").textContent = `Your ${peerRole}`;
+    document.getElementById("peerRole").textContent = peerRole;
 
-    ws.onmessage = (event) => {
-      let msg;
-      try { msg = JSON.parse(event.data); }
-      catch { appendLog(`raw: ${event.data}`, "in"); return; }
+    appendLog(`Joined booked room ${msg.room.slice(0, 12)}`, "sys");
+    showToast("Joined booked session.", "success");
 
-      switch (msg.type) {
-
-        case "waiting":
-          // Already showing waiting state
-          document.getElementById("queueInfo").innerHTML =
-            `role: <span>${msg.role}</span> · status: <span>in queue</span>`;
-          break;
-
-        case "paired":
-          currentRoomId = msg.room_id;
-          onPaired(msg);
-          break;
-
-        default:
-          // Relay message from peer (SDP / ICE / custom)
-          appendLog(`← ${JSON.stringify(msg)}`, "in");
-          break;
-      }
-    };
-
-    ws.onclose = (e) => {
-      appendLog(`Disconnected (${e.code})`, "sys");
-      if (currentRoomId) {
-        // Was in an active session — peer left
-        showToast("Your partner disconnected.", "error");
-        currentRoomId = null;
-        setTimeout(() => showState("stateIdle"), 1500);
-      } else {
-        showState("stateIdle");
-      }
-      ws = null;
-    };
-
-    ws.onerror = () => {
-      showToast("Connection error. Please try again.", "error");
-      showState("stateIdle");
-      ws = null;
-    };
-  };
+    createPeerConnection();
+  }
 
   // ── On paired ────────────────────────────────────────────────────────
 
-  function onPaired(msg) {
+  function onJoinedBookedRoom(msg) {
     showState("statePaired");
 
-    document.getElementById("roomIdLabel").textContent = `room: ${msg.room_id.slice(0,8)}…`;
+    document.getElementById("roomIdLabel").textContent =
+      `room: ${msg.room.slice(0, 12)}…`;
 
-    const myRole   = userProfile.role;
+    const myRole = userProfile.role;
     const peerRole = PEER_LABEL[myRole];
 
-    document.getElementById("peerAvatar").textContent = peerRole === "Mentor" ? "🎓" : "📖";
-    document.getElementById("peerName").textContent   = `Your ${peerRole}`;
-    document.getElementById("peerRole").textContent   = peerRole;
+    document.getElementById("peerAvatar").textContent =
+      peerRole === "Mentor" ? "🎓" : "📖";
 
-    // If peer UID comes through later, update name
-    if (msg.peer_uid) {
-      document.getElementById("peerName").textContent = msg.peer_uid.slice(0, 8) + "…";
-    }
+    document.getElementById("peerName").textContent = `Your ${peerRole}`;
+    document.getElementById("peerRole").textContent = peerRole;
 
-    appendLog(`Paired in room ${msg.room_id.slice(0,8)}`, "sys");
-    showToast(`Matched with a ${peerRole.toLowerCase()}! 🎉`, "success");
+    appendLog(`Joined booked room ${msg.room.slice(0, 12)}`, "sys");
+    showToast("Joined booked session.", "success");
+
+    createPeerConnection();
   }
-
-  // ── Cancel waiting ───────────────────────────────────────────────────
-
-  window.cancelWait = function() {
-    if (ws) { ws.close(); ws = null; }
-    currentRoomId = null;
-    showState("stateIdle");
-  };
 
   // ── Send signal message ──────────────────────────────────────────────
 

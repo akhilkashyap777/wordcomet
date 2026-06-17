@@ -28,6 +28,7 @@ from auth import router as auth_router
 from friends import router as friends_router, db_session
 from challenges import router as challenges_router
 from websocket_routes import router as websocket_router
+from mentor_slots import router as mentor_slots_router
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -51,6 +52,7 @@ TURN_API_TOKEN = os.environ.get("TURN_API_TOKEN")
 if os.path.exists(SERVICE_ACCOUNT_JSON):
     cred = credentials.Certificate(SERVICE_ACCOUNT_JSON)
     firebase_admin.initialize_app(cred)
+    print("Firebase project loaded:", firebase_admin.get_app().project_id)
     print("🔥 Firebase initialized successfully.")
 else:
     print(f"⚠️  Firebase key not found at {SERVICE_ACCOUNT_JSON}")
@@ -99,6 +101,7 @@ app.include_router(auth_router)
 app.include_router(friends_router)
 app.include_router(challenges_router)
 app.include_router(websocket_router)
+app.include_router(mentor_slots_router)
 
 app.add_middleware(
     CORSMiddleware,

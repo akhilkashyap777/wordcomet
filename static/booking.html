@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+    body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f5f5f5;
+}
+
+h1, h2, h3 {
+    margin-bottom: 10px;
+}
+
+#userInfo,
+#mentorSection,
+#menteeSection {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input,
+select {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px;
+    margin-bottom: 15px;
+}
+
+button {
+    padding: 8px 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    background: #2563eb;
+    color: white;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+table th,
+table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+table th {
+    background: #f0f0f0;
+}
+
+hr {
+    margin: 20px 0;
+}
+
+#videoModal {
+    position: fixed;
+    top: 5%;
+    left: 5%;
+    width: 90%;
+    height: 90%;
+    background: white;
+    border: 2px solid #333;
+    padding: 20px;
+    overflow: auto;
+    z-index: 9999;
+}
+
+#videoModal video {
+    width: 45%;
+    background: black;
+    margin-right: 10px;
+    border-radius: 8px;
+}
+
+#videoModal button {
+    margin-top: 15px;
+    margin-right: 10px;
+}
+
+.hidden {
+    display: none;
+}
+</style>
+<head>
+    <title>WordComet Mentorship</title>
+</head>
+<body>
+
+    <h1>WordComet Mentorship</h1>
+
+    <!-- USER INFO -->
+    <div id="userInfo">
+        <h3>User</h3>
+        <p>Name: <span id="userName"></span></p>
+        <p>Role: <span id="userRole"></span></p>
+    </div>
+
+    <hr>
+
+    <!-- ===================================================== -->
+    <!-- MENTOR SECTION -->
+    <!-- ===================================================== -->
+    <div id="mentorSection" style="display:none;">
+
+        <h2>Mentor Availability</h2>
+
+        <div>
+            <label>Day</label>
+            <select id="dayOfWeek">
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option>Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+                <option>Saturday</option>
+                <option>Sunday</option>
+            </select>
+        </div>
+
+        <br>
+
+        <div>
+            <label>Start Time</label>
+            <input type="time" id="startTime">
+        </div>
+
+        <br>
+
+        <div>
+            <label>End Time</label>
+            <input type="time" id="endTime">
+        </div>
+
+        <br>
+
+        <div>
+            <label>Slot Duration (Minutes)</label>
+            <input type="number" id="slotDuration" value="60">
+        </div>
+
+        <br>
+
+        <button id="createAvailabilityBtn">
+            Create Availability
+        </button>
+
+        <hr>
+
+        <h3>My Availability</h3>
+
+        <table border="1" width="100%">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Day</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="availabilityTable">
+                <!-- availability rows -->
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- MENTEE SECTION -->
+    <!-- ===================================================== -->
+    <div id="menteeSection" style="display:none;">
+
+        <h2>Book Mentor Session</h2>
+
+        <div>
+            <label>Mentor</label>
+
+            <select id="mentorDropdown">
+                <option>Select Mentor</option>
+            </select>
+        </div>
+
+        <br>
+
+        <div>
+            <label>Date</label>
+            <input type="date" id="sessionDate">
+        </div>
+
+        <br>
+
+        <button id="loadSlotsBtn">
+            Load Slots
+        </button>
+
+        <hr>
+
+        <h3>Available Slots</h3>
+
+        <table border="1" width="100%">
+            <thead>
+                <tr>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Booked</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="slotsTable">
+                <!-- slot rows -->
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h3>My Bookings</h3>
+
+        <table border="1" width="100%">
+            <thead>
+                <tr>
+                    <th>Mentor</th>
+                    <th>Date</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Status</th>
+                    <th>Join</th>
+                    <th>Cancel</th>
+                </tr>
+            </thead>
+
+            <tbody id="bookingsTable">
+                <!-- booking rows -->
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- VIDEO CALL MODAL -->
+    <!-- ===================================================== -->
+    <div id="videoModal" style="display:none; border:1px solid black; padding:20px;">
+
+        <h2>Mentorship Session</h2>
+
+        <div>
+
+            <video
+                id="localVideo"
+                autoplay
+                muted
+                playsinline
+                width="300">
+            </video>
+
+            <video
+                id="remoteVideo"
+                autoplay
+                playsinline
+                width="300">
+            </video>
+
+        </div>
+
+        <br>
+
+        <button id="startCallBtn">
+            Start Camera
+        </button>
+
+        <button id="muteBtn">
+            Mute
+        </button>
+
+        <button id="cameraBtn">
+            Camera Off
+        </button>
+
+        <button id="hangupBtn">
+            End Call
+        </button>
+
+    </div>
+
+</body>
+
+<script>
+const BASE_URL = "http://127.0.0.1:8011";
+
+let token = localStorage.getItem("wc_id_token");
+let currentUser = JSON.parse(localStorage.getItem("wc_user") || "{}");
+
+document.addEventListener("DOMContentLoaded", init);
+
+async function init() {
+    if (!token) {
+        alert("Login first");
+        window.location.href = "login.html";
+        return;
+    }
+
+    await loadProfile();
+
+    if (currentUser.role === "mentor") {
+        document.getElementById("mentorSection").style.display = "block";
+        loadMyAvailability();
+    }
+
+    if (currentUser.role === "mentee") {
+        document.getElementById("menteeSection").style.display = "block";
+        loadMentors();
+        loadMyBookings();
+    }
+
+    document.getElementById("createAvailabilityBtn").onclick = createAvailability;
+    document.getElementById("loadSlotsBtn").onclick = loadSlots;
+}
+
+async function api(url, options = {}) {
+    const res = await fetch(BASE_URL + url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+            ...(options.headers || {})
+        }
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Request failed");
+    }
+
+    return res.json();
+}
+
+async function loadProfile() {
+    const user = await api("/profile/me");
+    currentUser = user;
+
+    localStorage.setItem("wc_user", JSON.stringify(user));
+
+    document.getElementById("userName").textContent = user.display_name || user.email;
+    document.getElementById("userRole").textContent = user.role;
+}
+
+/* ---------------- MENTOR ---------------- */
+
+async function createAvailability() {
+    try {
+        const body = {
+            day_of_week: document.getElementById("dayOfWeek").value,
+            start_time: document.getElementById("startTime").value,
+            end_time: document.getElementById("endTime").value,
+            slot_duration_minutes: Number(document.getElementById("slotDuration").value)
+        };
+
+        await api("/mentor/availability", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
+
+        alert("Availability created");
+        loadMyAvailability();
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function loadMyAvailability() {
+    try {
+        const data = await api("/mentor/availability/me");
+        const tbody = document.getElementById("availabilityTable");
+        tbody.innerHTML = "";
+
+        data.availability.forEach(a => {
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${a.id}</td>
+                <td>${a.day_of_week}</td>
+                <td>${formatTime(a.start_time)}</td>
+                <td>${formatTime(a.end_time)}</td>
+                <td>${a.slot_duration_minutes}</td>
+                <td>${a.is_active ? "Active" : "Inactive"}</td>
+                <td>
+                    ${a.is_active
+                        ? `<button onclick="disableAvailability(${a.id})">Disable</button>`
+                        : "-"
+                    }
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function disableAvailability(id) {
+    try {
+        await api(`/profile/availability/${id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_active: false })
+        });
+
+        alert("Availability disabled");
+        loadMyAvailability();
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+/* ---------------- MENTEE ---------------- */
+
+async function loadMentors() {
+    try {
+        const data = await api("/mentors");
+        const dropdown = document.getElementById("mentorDropdown");
+        dropdown.innerHTML = `<option value="">Select Mentor</option>`;
+
+        data.mentors.forEach(m => {
+            const option = document.createElement("option");
+            option.value = m.id;
+            option.textContent = `${m.display_name || m.full_name || "Mentor"} (${m.id})`;
+            dropdown.appendChild(option);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function loadSlots() {
+    try {
+        const mentorId = document.getElementById("mentorDropdown").value;
+        const date = document.getElementById("sessionDate").value;
+
+        if (!mentorId || !date) {
+            alert("Select mentor and date");
+            return;
+        }
+
+        const data = await api(`/mentor/${mentorId}/slots?session_date=${date}`);
+        const tbody = document.getElementById("slotsTable");
+        tbody.innerHTML = "";
+
+        data.slots.forEach(slot => {
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${slot.start_time}</td>
+                <td>${slot.end_time}</td>
+                <td>${slot.is_booked ? "Yes" : "No"}</td>
+                <td>
+                    ${slot.can_book
+                        ? `<button onclick="bookSlot(${slot.mentor_id}, ${slot.availability_id}, '${slot.session_date}', '${slot.start_time}', '${slot.end_time}')">Book</button>`
+                        : "Not available"
+                    }
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function bookSlot(mentorId, availabilityId, sessionDate, startTime, endTime) {
+    try {
+        await api("/mentor/bookings", {
+            method: "POST",
+            body: JSON.stringify({
+                mentor_id: mentorId,
+                availability_id: availabilityId,
+                session_date: sessionDate,
+                start_time: startTime,
+                end_time: endTime
+            })
+        });
+
+        alert("Slot booked");
+        loadSlots();
+        loadMyBookings();
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function loadMyBookings() {
+    try {
+        const data = await api("/profile/me");
+        const tbody = document.getElementById("bookingsTable");
+        tbody.innerHTML = "";
+
+        data.bookings.forEach(b => {
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${b.mentor_name || b.mentee_name || b.mentor_id}</td>
+                <td>${b.session_date}</td>
+                <td>${formatTime(b.start_time)}</td>
+                <td>${formatTime(b.end_time)}</td>
+                <td>${b.status}</td>
+                <td>
+                    <button onclick="prepareJoinCall('${b.video_room_id}')">
+                        Join
+                    </button>
+                </td>
+                <td>
+                    ${b.status === "booked"
+                        ? `<button onclick="cancelBooking(${b.id})">Cancel</button>`
+                        : "-"
+                    }
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function cancelBooking(id) {
+    try {
+        await api(`/mentor/bookings/${id}/cancel`, {
+            method: "PATCH"
+        });
+
+        alert("Booking cancelled");
+        loadMyBookings();
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+/* ---------------- CALL PLACEHOLDER ---------------- */
+
+function prepareJoinCall(videoRoomId) {
+    localStorage.setItem("wc_video_room_id", videoRoomId);
+
+    alert("Room saved: " + videoRoomId + "\nNow connect this to your existing WebRTC code.");
+
+    document.getElementById("videoModal").style.display = "block";
+
+    // Later your existing WebRTC code should connect to:
+    // ws://127.0.0.1:8011/mentor/ws/video/${videoRoomId}?token=${token}
+}
+
+/* ---------------- HELPERS ---------------- */
+
+function formatTime(value) {
+    if (!value) return "";
+    return String(value).slice(0, 5);
+}
+</script>
+</html>
