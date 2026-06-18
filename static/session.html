@@ -647,29 +647,6 @@
     createPeerConnection();
   }
 
-  // ── On paired ────────────────────────────────────────────────────────
-
-  function onJoinedBookedRoom(msg) {
-    showState("statePaired");
-
-    document.getElementById("roomIdLabel").textContent =
-      `room: ${msg.room.slice(0, 12)}…`;
-
-    const myRole = userProfile.role;
-    const peerRole = PEER_LABEL[myRole];
-
-    document.getElementById("peerAvatar").textContent =
-      peerRole === "Mentor" ? "🎓" : "📖";
-
-    document.getElementById("peerName").textContent = `Your ${peerRole}`;
-    document.getElementById("peerRole").textContent = peerRole;
-
-    appendLog(`Joined booked room ${msg.room.slice(0, 12)}`, "sys");
-    showToast("Joined booked session.", "success");
-
-    createPeerConnection();
-  }
-
   // ── Send signal message ──────────────────────────────────────────────
 
   window.sendMsg = function() {
