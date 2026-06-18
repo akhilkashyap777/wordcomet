@@ -647,6 +647,76 @@
     createPeerConnection();
   }
 
+  window.connect = async function () {
+    try {
+      const idToken = localStorage.getItem("wc_id_token");
+
+      if (!idToken) {
+        showToast("Login token missing. Please login again.", "error");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const res = await fetch(`${BASE_URL}/mentor/bookings/me`, {
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
+      if (!res.ok) {
+        showToast("Could not load booked session.", "error");
+        return;
+      }
+
+      const data = await res.json();
+      const booking = data.bookings.find(b => b.status === "booked");
+
+      if (!booking) {
+        showToast("No booked session found.", "error");
+        return;
+      }
+
+      currentRoomId = booking.video_room_id;
+      showState("stateWaiting");
+
+      ws = new WebSocket(
+        `${WS_URL}/mentor/ws/video/${booking.video_room_id}?token=${encodeURIComponent(idToken)}`
+      );
+
+      ws.onopen = () => {
+        appendLog("WebSocket connected", "sys");
+      };
+
+      ws.onmessage = async (event) => {
+        let msg;
+        try {
+          msg = JSON.parse(event.data);
+        } catch {
+          appendLog(`← ${event.data}`, "in");
+          return;
+        }
+
+        if (msg.type === "joined") {
+          onJoinedBookedRoom(msg);
+          return;
+        }
+
+        appendLog(`← ${event.data}`, "in");
+      };
+
+      ws.onclose = () => {
+        appendLog("WebSocket closed", "sys");
+        showToast("Session disconnected.", "error");
+      };
+
+      ws.onerror = () => {
+        showToast("WebSocket error.", "error");
+      };
+
+    } catch (err) {
+      console.error(err);
+      showToast("Could not start session.", "error");
+    }
+  };
+
   // ── Send signal message ──────────────────────────────────────────────
 
   window.sendMsg = function() {
