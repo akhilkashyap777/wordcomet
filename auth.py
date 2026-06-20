@@ -105,6 +105,12 @@ class UpdateProfileBody(BaseModel):
     # mentee fields
     learning_goal: Optional[str] = None
 
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    qualification: Optional[str] = None
+    course: Optional[str] = None
+    phone_number: Optional[str] = None
+
 class RateMentorBody(BaseModel):
     mentor_id: int
     rating: int
@@ -358,6 +364,20 @@ def update_my_profile(
         fields["notification_time"] = body.notification_time
     if body.notifications_enabled is not None:
         fields["notifications_enabled"] = body.notifications_enabled
+    if body.age is not None:
+        fields["age"] = body.age
+
+    if body.gender is not None:
+        fields["gender"] = body.gender
+
+    if body.qualification is not None:
+        fields["qualification"] = body.qualification
+
+    if body.course is not None:
+        fields["course"] = body.course
+
+    if body.phone_number is not None:
+        fields["phone_number"] = body.phone_number
     if body.interview_field is not None:
         if role != "mentor":
             raise HTTPException(status_code=403, detail="Only mentors can update interview_field.")
@@ -527,8 +547,17 @@ def get_public_profile(
                 display_name,
                 full_name,
                 profile_picture_url,
+                email,
+                age,
+                gender,
+                qualification,
+                course,
+                phone_number,
                 role,
                 preferred_language,
+                bio,
+                average_rating,
+                rating_count,
                 created_at,
                 last_active_at
             FROM users
