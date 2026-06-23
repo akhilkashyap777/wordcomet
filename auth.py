@@ -682,3 +682,127 @@ def replace_my_profile(
 
     finally:
         conn.close()
+
+@router.post("/profile/me", status_code=201)
+def create_my_profile(
+    body: UpdateProfileBody,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Create/complete logged-in user's profile after signup.
+    Headers: Authorization: Bearer <firebase_id_token>
+    """
+
+    firebase_uid = current_user["uid"]
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT id, role FROM users WHERE firebase_uid = %s",
+            (firebase_uid,)
+        )
+        db_user = cur.fetchone()
+
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found. Please signup first.")
+
+        role = db_user["role"]
+
+        fields = {}
+
+        if body.display_name is not None:
+            if not body.display_name.strip():
+                raise HTTPException(status_code=400, detail="display_name cannot be empty.")
+            fields["display_name"] = body.display_name.strip()
+
+        if body.full_name is not None:
+            fields["full_name"] = body.full_name.strip()
+
+        if body.profile_picture_url is not None:
+            fields["profile_picture_url"] = body.profile_picture_url
+
+        if body.preferred_language is not None:
+            fields["preferred_language"] = body.preferred_language
+
+        if body.timezone is not None:
+            fields["timezone"] = body.timezone
+
+        if body.notification_time is not None:
+            fields["notification_time"] = body.notification_time
+
+        if body.notifications_enabled is not None:
+            fields["notifications_enabled"] = body.notifications_enabled
+
+        if body.age is not None:
+            fields["age"] = body.age
+
+        if body.gender is not None:
+            fields["gender"] = body.gender
+
+        if body.qualification is not None:
+            fields["qualification"] = body.qualification
+
+        if body.course is not None:
+            fields["course"] = body.course
+
+        if body.phone_number is not None:
+            fields["phone_number"] = body.phone_number
+
+        if body.interview_field is not None:
+            if role != "mentor":
+                raise HTTPException(status_code=403, detail="Only mentors can add interview_field.")
+            fields["interview_field"] = body.interview_field
+
+        if body.interview_subjects is not None:
+            if role != "mentor":
+                raise HTTPException(status_code=403, detail="Only mentors can add interview_subjects.")
+            fields["interview_subjects"] = body.interview_subjects
+
+        if body.bio is not None:
+            if role != "mentor":
+                raise HTTPException(status_code=403, detail="Only mentors can add bio.")
+            fields["bio"] = body.bio
+
+        if body.learning_goal is not None:
+            if role != "mentee":
+                raise HTTPException(status_code=403, detail="Only mentees can add learning_goal.")
+            fields["learning_goal"] = body.learning_goal
+
+        if not fields:
+            raise HTTPException(status_code=400, detail="No profile fields provided.")
+
+        fields["updated_at"] = datetime.now(timezone.utc)
+
+        set_clause = ", ".join(f"{k} = %s" for k in fields.keys())
+
+        cur.execute(
+            f"""
+            UPDATE users
+            SET {set_clause}
+            WHERE firebase_uid = %s
+            RETURNING *
+            """,
+            list(fields.values()) + [firebase_uid]
+        )
+
+        user = dict(cur.fetchone())
+        conn.commit()
+
+        user.pop("fcm_token", None)
+        user.pop("device_id", None)
+
+        return {
+            "status": "created",
+            "message": "Profile created/completed successfully.",
+            "user": user
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Profile creation failed: {str(e)}")
+    finally:
+        conn.close()
