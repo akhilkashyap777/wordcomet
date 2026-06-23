@@ -597,3 +597,88 @@ def list_mentors(current_user: dict = Depends(get_current_user)):
         return {"mentors": [dict(row) for row in cur.fetchall()]}
     finally:
         conn.close()
+
+@router.put("/profile/me")
+def replace_my_profile(
+    body: UpdateProfileBody,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Full profile update using PUT.
+    Replaces all provided profile fields.
+    """
+
+    firebase_uid = current_user["uid"]
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT role FROM users WHERE firebase_uid = %s",
+            (firebase_uid,)
+        )
+
+        db_user = cur.fetchone()
+
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found.")
+
+        role = db_user["role"]
+
+        update_data = {
+            "display_name": body.display_name,
+            "full_name": body.full_name,
+            "profile_picture_url": body.profile_picture_url,
+            "preferred_language": body.preferred_language,
+            "timezone": body.timezone,
+            "notification_time": body.notification_time,
+            "notifications_enabled": body.notifications_enabled,
+            "age": body.age,
+            "gender": body.gender,
+            "qualification": body.qualification,
+            "course": body.course,
+            "phone_number": body.phone_number,
+        }
+
+        if role == "mentor":
+            update_data["interview_field"] = body.interview_field
+            update_data["interview_subjects"] = body.interview_subjects
+            update_data["bio"] = body.bio
+
+        if role == "mentee":
+            update_data["learning_goal"] = body.learning_goal
+
+        update_data["updated_at"] = datetime.now(timezone.utc)
+
+        set_clause = ", ".join(f"{k} = %s" for k in update_data.keys())
+
+        cur.execute(
+            f"""
+            UPDATE users
+            SET {set_clause}
+            WHERE firebase_uid = %s
+            RETURNING *
+            """,
+            list(update_data.values()) + [firebase_uid]
+        )
+
+        updated = cur.fetchone()
+
+        conn.commit()
+
+        updated = dict(updated)
+        updated.pop("fcm_token", None)
+        updated.pop("device_id", None)
+
+        return {
+            "status": "updated",
+            "user": updated
+        }
+
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Profile update failed: {str(e)}")
+
+    finally:
+        conn.close()
