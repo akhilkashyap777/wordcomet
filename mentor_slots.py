@@ -27,6 +27,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from firebase_admin import auth as fb_auth
 
+import boto3
+from fastapi import UploadFile, File
+
 load_dotenv()
 
 router = APIRouter(prefix="/mentor", tags=["Mentor Slots"])
@@ -50,6 +53,14 @@ def get_db():
         cursor_factory=psycopg2.extras.RealDictCursor,
     )
 
+def get_r2_client():
+    return boto3.client(
+        "s3",
+        endpoint_url=os.environ.get("R2_ENDPOINT_URL"),
+        aws_access_key_id=os.environ.get("R2_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.environ.get("R2_SECRET_ACCESS_KEY"),
+        region_name="auto",
+    )
 
 # ─── Auth Helpers ────────────────────────────────────────────────────
 
@@ -508,6 +519,92 @@ def cancel_booking(booking_id: int, current_user: dict = Depends(get_current_use
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=f"Cancel booking failed: {str(e)}")
+    finally:
+        conn.close()
+
+@router.post("/bookings/{booking_id}/resume")
+def upload_booking_resume(
+    booking_id: int,
+    resume: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    db_user = get_db_user_by_firebase_uid(current_user["uid"])
+    require_role(db_user, "mentee")
+
+    if resume.content_type not in [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]:
+        raise HTTPException(status_code=400, detail="Only PDF, DOC, or DOCX resumes are allowed.")
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT *
+            FROM mentor_bookings
+            WHERE id = %s
+              AND mentee_id = %s
+              AND status = 'booked'
+            """,
+            (booking_id, db_user["id"]),
+        )
+
+        booking = cur.fetchone()
+
+        if not booking:
+            raise HTTPException(status_code=404, detail="Active booking not found for this mentee.")
+
+        bucket_name = os.environ.get("R2_BUCKET_NAME")
+        folder = os.environ.get("R2_RESUME_FOLDER", "resumes")
+
+        if not bucket_name:
+            raise HTTPException(status_code=500, detail="R2_BUCKET_NAME missing in env.")
+
+        file_ext = resume.filename.split(".")[-1].lower()
+        resume_key = f"{folder}/mentee_{db_user['id']}/booking_{booking_id}/resume.{file_ext}"
+
+        r2 = get_r2_client()
+
+        r2.upload_fileobj(
+            resume.file,
+            bucket_name,
+            resume_key,
+            ExtraArgs={
+                "ContentType": resume.content_type,
+            },
+        )
+
+        cur.execute(
+            """
+            UPDATE mentor_bookings
+            SET
+                resume_key = %s,
+                resume_filename = %s,
+                resume_uploaded_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (resume_key, resume.filename, booking_id),
+        )
+
+        updated_booking = dict(cur.fetchone())
+        conn.commit()
+
+        return {
+            "status": "resume_uploaded",
+            "booking": updated_booking,
+        }
+
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Resume upload failed: {str(e)}")
     finally:
         conn.close()
 
