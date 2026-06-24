@@ -266,7 +266,12 @@ def login(body: LoginBody):
         updated_user.pop("fcm_token", None)
         updated_user.pop("device_id", None)
 
-        return {"status": "ok", "user": updated_user}
+        return {
+            "status": "ok",
+            "access_token": body.id_token,
+            "token_type": "bearer",
+            "user": updated_user
+        }
 
     except HTTPException:
         raise
