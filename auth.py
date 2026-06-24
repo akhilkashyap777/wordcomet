@@ -79,7 +79,7 @@ VALID_ROLES = ("mentor", "mentee")
 
 class SignupBody(BaseModel):
     id_token: str
-    role: str                               # "mentor" or "mentee"
+    role: Optional[str] = None                               # "mentor" or "mentee"
     display_name: str
     full_name: Optional[str] = None
 
@@ -132,8 +132,6 @@ def signup(body: SignupBody):
         "full_name": "John Doe"       ← optional
     }
     """
-    if body.role not in VALID_ROLES:
-        raise HTTPException(status_code=400, detail=f"role must be one of: {VALID_ROLES}")
 
     if not body.display_name or not body.display_name.strip():
         raise HTTPException(status_code=400, detail="display_name is required.")
@@ -180,7 +178,7 @@ def signup(body: SignupBody):
             body.display_name.strip(),
             body.full_name.strip() if body.full_name else None,
             picture,
-            body.role,
+            "mentee",
         ))
 
         user = dict(cur.fetchone())
