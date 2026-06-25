@@ -469,6 +469,9 @@ def my_bookings(current_user: dict = Depends(get_current_user)):
                 FROM mentor_bookings b
                 JOIN users u ON u.id = b.mentee_id
                 WHERE b.mentor_id = %s
+                    AND b.status = 'booked'
+                    AND b.session_date = CURRENT_DATE
+                    AND CURRENT_TIME BETWEEN b.start_time AND b.end_time
                 ORDER BY b.session_date DESC, b.start_time DESC
                 """,
                 (db_user["id"],),
@@ -480,11 +483,22 @@ def my_bookings(current_user: dict = Depends(get_current_user)):
                 FROM mentor_bookings b
                 JOIN users u ON u.id = b.mentor_id
                 WHERE b.mentee_id = %s
+                    AND b.status = 'booked'
+                    AND b.session_date = CURRENT_DATE
+                    AND CURRENT_TIME BETWEEN b.start_time AND b.end_time
                 ORDER BY b.session_date DESC, b.start_time DESC
                 """,
                 (db_user["id"],),
             )
-        return {"bookings": [dict(row) for row in cur.fetchall()]}
+        bookings = [dict(row) for row in cur.fetchall()]
+
+        if not bookings:
+            raise HTTPException(
+                status_code=404,
+                detail="No active booked session is available right now."
+            )
+
+        return {"bookings": bookings}
     finally:
         conn.close()
 
