@@ -739,3 +739,168 @@ async def mentor_video_socket(websocket: WebSocket, video_room_id: str):
                 room.remove(websocket)
             if not room and video_room_id in active_rooms:
                 del active_rooms[video_room_id]
+
+@router.get("/bookings/{booking_id}/student-details")
+def mentor_get_student_booking_details(
+    booking_id: int,
+    current_user: dict = Depends(get_current_user),
+):
+    db_user = get_db_user_by_firebase_uid(current_user["uid"])
+    require_role(db_user, "mentor")
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT
+                b.id AS booking_id,
+                b.session_date,
+                b.start_time,
+                b.end_time,
+                b.status,
+                b.video_room_id,
+                b.resume_key,
+                b.resume_filename,
+                b.resume_uploaded_at,
+
+                u.id AS student_id,
+                u.display_name AS student_name,
+                u.full_name AS student_full_name,
+                u.email AS student_email,
+                u.profile_picture_url AS student_picture,
+
+                u.qualification,
+                u.interview_field,
+                u.interview_subjects
+
+            FROM mentor_bookings b
+            JOIN users u ON u.id = b.mentee_id
+            WHERE b.id = %s
+              AND b.mentor_id = %s
+              AND b.status = 'booked'
+            """,
+            (booking_id, db_user["id"]),
+        )
+
+        row = cur.fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=404,
+                detail="Booking not found for this mentor."
+            )
+
+        return {
+            "booking_id": row["booking_id"],
+            "session_date": row["session_date"],
+            "start_time": row["start_time"],
+            "end_time": row["end_time"],
+            "status": row["status"],
+            "video_room_id": row["video_room_id"],
+
+            "student": {
+                "id": row["student_id"],
+                "display_name": row["student_name"],
+                "full_name": row["student_full_name"],
+                "email": row["student_email"],
+                "profile_picture_url": row["student_picture"],
+                "qualification": row["qualification"],
+                "interview_field": row["interview_field"],
+                "interview_subjects": row["interview_subjects"],
+            },
+
+            "resume": {
+                "resume_key": row["resume_key"],
+                "filename": row["resume_filename"],
+                "uploaded_at": row["resume_uploaded_at"],
+                "is_uploaded": row["resume_key"] is not None,
+            }
+        }
+
+    finally:
+        conn.close()
+
+@router.get("/bookings/{booking_id}/mentor-details")
+def mentee_get_mentor_booking_details(
+    booking_id: int,
+    current_user: dict = Depends(get_current_user),
+):
+    db_user = get_db_user_by_firebase_uid(current_user["uid"])
+    require_role(db_user, "mentee")
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT
+                b.id AS booking_id,
+                b.session_date,
+                b.start_time,
+                b.end_time,
+                b.status,
+                b.video_room_id,
+                b.resume_key,
+                b.resume_filename,
+                b.resume_uploaded_at,
+
+                u.id AS mentor_id,
+                u.display_name AS mentor_name,
+                u.full_name AS mentor_full_name,
+                u.email AS mentor_email,
+                u.profile_picture_url AS mentor_picture,
+                u.bio AS mentor_bio,
+                u.interview_field,
+                u.interview_subjects,
+                u.average_rating,
+                u.rating_count
+
+            FROM mentor_bookings b
+            JOIN users u ON u.id = b.mentor_id
+            WHERE b.id = %s
+              AND b.mentee_id = %s
+              AND b.status = 'booked'
+            """,
+            (booking_id, db_user["id"]),
+        )
+
+        row = cur.fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=404,
+                detail="Booking not found for this student."
+            )
+
+        return {
+            "booking_id": row["booking_id"],
+            "session_date": row["session_date"],
+            "start_time": row["start_time"],
+            "end_time": row["end_time"],
+            "status": row["status"],
+            "video_room_id": row["video_room_id"],
+
+            "mentor": {
+                "id": row["mentor_id"],
+                "display_name": row["mentor_name"],
+                "full_name": row["mentor_full_name"],
+                "email": row["mentor_email"],
+                "profile_picture_url": row["mentor_picture"],
+                "bio": row["mentor_bio"],
+                "interview_field": row["interview_field"],
+                "interview_subjects": row["interview_subjects"],
+                "average_rating": row["average_rating"],
+                "rating_count": row["rating_count"],
+            },
+
+            "resume": {
+                "resume_key": row["resume_key"],
+                "filename": row["resume_filename"],
+                "uploaded_at": row["resume_uploaded_at"],
+                "is_uploaded": row["resume_key"] is not None,
+            }
+        }
+
+    finally:
+        conn.close()
