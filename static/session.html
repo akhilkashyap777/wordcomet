@@ -544,88 +544,6 @@
     return name.trim().split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
   }
 
-  // ── Availability poll ────────────────────────────────────────────────
-
-  async function fetchStatus() {
-    try {
-      const res  = await fetch(`${BASE_URL}/status`);
-      if (!res.ok) return null;
-      return await res.json();
-    } catch { return null; }
-  }
-
-  async function updateAvailability() {
-    const badge    = document.getElementById("availBadge");
-    const textEl   = document.getElementById("availText");
-    const btnConn  = document.getElementById("btnConnect");
-    const role     = userProfile?.role;
-
-    const status = await fetchStatus();
-
-    if (!status) {
-      badge.className = "avail-badge unavailable";
-      textEl.textContent = "Server unreachable";
-      btnConn.disabled = true;
-      return;
-    }
-
-    if (role === "mentee") {
-      // Student cares about teachers available
-      const n = status.teachers_available || 0;
-      if (n > 0) {
-        badge.className    = "avail-badge available";
-        textEl.textContent = `${n} mentor${n > 1 ? "s" : ""} available`;
-        btnConn.disabled   = false;
-      } else {
-        badge.className    = "avail-badge unavailable";
-        textEl.textContent = "No mentors available right now";
-        btnConn.disabled   = false; // still allow — will queue
-      }
-    } else {
-      // Mentor sees how many students are waiting
-      const n = status.students_waiting || 0;
-      badge.className    = "avail-badge available";
-      textEl.textContent = n > 0 ? `${n} mentee${n > 1 ? "s" : ""} waiting` : "No mentees waiting yet";
-      btnConn.disabled   = false;
-    }
-
-    // active sessions
-    if (status.active_sessions > 0) {
-      textEl.textContent += ` · ${status.active_sessions} active session${status.active_sessions > 1 ? "s" : ""}`;
-    }
-  }
-
-  // ── Setup idle UI ────────────────────────────────────────────────────
-
-  function setupIdleUI() {
-    const role = userProfile.role;
-
-    // Topbar chip
-    const chip = document.getElementById("userChip");
-    chip.classList.toggle("mentee", role === "mentee");
-    document.getElementById("chipName").textContent =
-      `${userProfile.display_name} · ${ROLE_LABEL[role]}`;
-
-    // Role badge
-    const rb = document.getElementById("roleBadge");
-    rb.classList.toggle("mentee", role === "mentee");
-    document.getElementById("roleIcon").textContent  = ROLE_ICON[role];
-    document.getElementById("roleLabel").textContent = ROLE_LABEL[role];
-
-    // Title / desc
-    if (role === "mentor") {
-      document.getElementById("idleTitle").textContent = "Ready to teach?";
-      document.getElementById("idleDesc").textContent  = "Join the queue and get paired with a mentee looking to learn.";
-    } else {
-      document.getElementById("idleTitle").textContent = "Ready to learn?";
-      document.getElementById("idleDesc").textContent  = "Join the queue and get matched with an available mentor.";
-    }
-
-    updateAvailability();
-    // Refresh availability every 15s
-    setInterval(updateAvailability, 15000);
-  }
-
   // ── Connect ──────────────────────────────────────────────────────────
 
   function onJoinedBookedRoom(msg) {
@@ -736,7 +654,6 @@
     if (ws) { ws.close(); ws = null; }
     currentRoomId = null;
     showState("stateIdle");
-    updateAvailability();
     showToast("Session ended.");
   };
 
@@ -779,7 +696,6 @@
       return;
     }
 
-    setupIdleUI();
     showState("stateIdle");
   });
 </script>

@@ -9,14 +9,17 @@ import os
 import json
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Header, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import UploadFile, File, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 from dotenv import load_dotenv
+import shutil
 import httpx
 import uuid
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
+
 # from database import db_session
 
 load_dotenv()
@@ -25,6 +28,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 
 from auth import router as auth_router
+from quiz import router as quiz_router
 from friends import router as friends_router, db_session
 from challenges import router as challenges_router
 from websocket_routes import router as websocket_router
@@ -35,6 +39,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # live credentials
 SERVICE_ACCOUNT_JSON = os.path.join(BASE_DIR, "wordcomet.json")
+
+WORD_IMAGE_DIR = os.path.join(BASE_DIR, "static", "word_images")
+os.makedirs(WORD_IMAGE_DIR, exist_ok=True)
 
 # test firebase credentials
 # SERVICE_ACCOUNT_JSON = os.path.join(BASE_DIR, "wordcomet-testenv.json")
@@ -102,6 +109,7 @@ app.include_router(friends_router)
 app.include_router(challenges_router)
 app.include_router(websocket_router)
 app.include_router(mentor_slots_router)
+app.include_router(quiz_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -147,6 +155,19 @@ class WordInput(BaseModel):
     pronunciation: Optional[str] = None
     phonetics: Optional[str] = None
     language: Optional[str] = "English"
+
+    synonyms: Optional[list[str]] = None
+    antonyms: Optional[list[str]] = None
+
+    base_form: Optional[str] = None
+    past_form: Optional[str] = None
+    past_participle: Optional[str] = None
+    present_participle: Optional[str] = None
+    third_person_singular: Optional[str] = None
+
+    comparative_form: Optional[str] = None
+    superlative_form: Optional[str] = None
+
     send_notification: Optional[bool] = True
 
 # ─── Public Endpoints ───────────────────────────────────────────────
@@ -240,6 +261,44 @@ def set_word(
         "date": datetime.now().isoformat(timespec="seconds"),
     }
 
+    current_word = {
+    "word": body.word,
+    "meaning": body.meaning,
+    "part_of_speech": body.part_of_speech,
+    "example": body.example,
+    "pronunciation": body.pronunciation,
+    "phonetics": body.phonetics,
+    "language": body.language or "English",
+    "date": datetime.now().isoformat(timespec="seconds"),
+    }
+
+    if body.synonyms:
+        current_word["synonyms"] = body.synonyms
+
+    if body.antonyms:
+        current_word["antonyms"] = body.antonyms
+
+    if body.base_form:
+        current_word["base_form"] = body.base_form
+
+    if body.past_form:
+        current_word["past_form"] = body.past_form
+
+    if body.past_participle:
+        current_word["past_participle"] = body.past_participle
+
+    if body.present_participle:
+        current_word["present_participle"] = body.present_participle
+
+    if body.third_person_singular:
+        current_word["third_person_singular"] = body.third_person_singular
+
+    if body.comparative_form:
+        current_word["comparative_form"] = body.comparative_form
+
+    if body.superlative_form:
+        current_word["superlative_form"] = body.superlative_form
+
     _save_word(current_word)
 
     if body.send_notification:
@@ -305,159 +364,6 @@ def send_push_notification(word_data: dict):
 def get_devices(x_api_key: str = Header(...)):
     verify_admin(x_api_key)
     return {"count": len(fcm_tokens)}
-
-
-class QuizQuestion(BaseModel):
-    quiz_type: str
-    question: str
-    options: list[str]
-    correct_index: int
-    hints: list[str]
-    example: str
-
-class QuizInput(BaseModel):
-    questions: list[QuizQuestion]
-    send_notification: Optional[bool] = True
-    featured_index: Optional[int] = 0
-
-# ─── Quiz Persistence ────────────────────────────────────────────────
-
-QUIZ_STORE_FILE = os.path.join(BASE_DIR, "current_quiz.json")
-
-def _load_quiz() -> dict | None:
-    if os.path.exists(QUIZ_STORE_FILE):
-        with open(QUIZ_STORE_FILE, "r") as f:
-            return json.load(f)
-    return None
-
-def _save_quiz(quiz_data: dict):
-    with open(QUIZ_STORE_FILE, "w") as f:
-        json.dump(quiz_data, f, indent=2)
-
-current_quiz: dict | None = _load_quiz()
-
-# ─── Quiz Endpoints ─────────────────────────────────────────────────
-
-@app.get("/quiz")
-def get_quiz():
-    """Fetch today's quiz."""
-    if not current_quiz:
-        raise HTTPException(status_code=404, detail="No quiz set for today yet.")
-    return current_quiz
-
-
-VALID_QUIZ_TYPES = (
-    "word_to_meaning", "fill_in_blank", "synonym",
-    "antonym", "usage_check", "definition_to_word",
-    "part_of_speech", "countability", "refers_to",
-    "word_form", "article",
-    "tense_identification", "correct_tense_in_sentence"
-)
-
-@app.post("/admin/set-quiz")
-def set_quiz(
-    body: QuizInput,
-    background_tasks: BackgroundTasks,
-    x_api_key: str = Header(...)
-):
-    global current_quiz
-    verify_admin(x_api_key)
-
-    if not body.questions:
-        raise HTTPException(status_code=400, detail="At least one question required.")
-    if len(body.questions) > 50:
-        raise HTTPException(status_code=400, detail="Maximum 50 questions per quiz.")
-
-    for idx, q in enumerate(body.questions):
-        prefix = f"Question {idx + 1}:"
-        if len(q.options) != 4:
-            raise HTTPException(status_code=400, detail=f"{prefix} Exactly 4 options required.")
-        if q.correct_index not in (0, 1, 2, 3):
-            raise HTTPException(status_code=400, detail=f"{prefix} correct_index must be 0-3.")
-        if len(q.hints) < 1 or len(q.hints) > 5:
-            raise HTTPException(status_code=400, detail=f"{prefix} Provide 1 to 5 hints.")
-        if q.quiz_type not in VALID_QUIZ_TYPES:
-            raise HTTPException(status_code=400, detail=f"{prefix} Invalid quiz_type.")
-
-    current_quiz = {
-        "date": datetime.now().isoformat(timespec="seconds"),
-        "total_questions": len(body.questions),
-	"featured_index": body.featured_index,
-        "questions": [
-            {
-                "id": idx,
-                "quiz_type": q.quiz_type,
-                "question": q.question,
-                "options": q.options,
-                "correct_index": q.correct_index,
-                "hints": q.hints,
-                "example": q.example,
-            }
-            for idx, q in enumerate(body.questions)
-        ],
-    }
-
-    _save_quiz(current_quiz)
-
-    if body.send_notification:
-        background_tasks.add_task(send_quiz_notification, current_quiz, body.featured_index)
-
-    return {
-        "status": "success",
-        "message": f"Quiz with {len(body.questions)} questions is now live!",
-        "quiz": current_quiz,
-    }
-
-
-# ─── Quiz Notification ──────────────────────────────────────────────
-
-def send_quiz_notification(quiz_data: dict, featured_index: int = 0):
-    """Notify devices with a specific question in the body."""
-    if not firebase_admin._apps or not fcm_tokens:
-        return
-
-    questions = quiz_data.get("questions", [])
-    if not questions:
-        return
-
-    if featured_index < 0 or featured_index >= len(questions):
-        featured_index = 0
-
-    featured = questions[featured_index]
-    total = quiz_data.get("total_questions", len(questions))
-
-    title = "☄️ Can you answer this?"
-    body = featured["question"]
-
-    stale = set()
-    success_count = 0
-
-    for token in list(fcm_tokens):
-        message = messaging.Message(
-            notification=messaging.Notification(
-                title=title,
-                body=body,
-            ),
-            data={
-                "type": "quiz",
-                "total_questions": str(total),
-                "featured_index": str(featured_index),
-            },
-            token=token,
-        )
-        try:
-            messaging.send(message)
-            success_count += 1
-        except messaging.UnregisteredError:
-            stale.add(token)
-        except Exception as e:
-            print(f"   ⚠️  Quiz notif failed: {e}")
-
-    if stale:
-        fcm_tokens.difference_update(stale)
-        _save_tokens(fcm_tokens)
-
-    print(f"   📬 Quiz notif sent to {success_count} device(s).")
 
 
 # ______ static files _________________________________________________
