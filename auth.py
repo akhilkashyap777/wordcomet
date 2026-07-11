@@ -12,6 +12,8 @@ import os
 import psycopg2
 import psycopg2.extras
 from datetime import datetime, timezone
+import boto3
+from fastapi import UploadFile, File, Form
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -1094,3 +1096,158 @@ def get_mentor_designations():
         "status": "ok",
         "designations": designations
     }
+
+def get_r2_client():
+    return boto3.client(
+        "s3",
+        endpoint_url=os.environ.get("R2_ENDPOINT_URL"),
+        aws_access_key_id=os.environ.get("R2_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.environ.get("R2_SECRET_ACCESS_KEY"),
+        region_name="auto",
+    )
+
+@router.patch("/mentor/profile")
+def update_mentor_professional_profile(
+    designation: str = Form(...),
+    experience_years: int = Form(...),
+    experience_months: int = Form(...),
+    resume: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    firebase_uid = current_user["uid"]
+
+    if experience_years < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="experience_years cannot be negative."
+        )
+
+    if experience_months < 0 or experience_months > 11:
+        raise HTTPException(
+            status_code=400,
+            detail="experience_months must be between 0 and 11."
+        )
+
+    if resume.content_type not in [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]:
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF, DOC, or DOCX resumes are allowed."
+        )
+
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT id, role
+            FROM users
+            WHERE firebase_uid = %s
+              AND is_active = TRUE
+            """,
+            (firebase_uid,)
+        )
+
+        user = cur.fetchone()
+
+        if not user:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found."
+            )
+
+        if user["role"] != "mentor":
+            raise HTTPException(
+                status_code=403,
+                detail="Only mentors can update mentor professional details."
+            )
+
+        bucket_name = os.environ.get("R2_BUCKET_NAME")
+        folder = os.environ.get(
+            "R2_MENTOR_RESUME_FOLDER",
+            "mentor_resumes"
+        )
+
+        if not bucket_name:
+            raise HTTPException(
+                status_code=500,
+                detail="R2_BUCKET_NAME missing in env."
+            )
+
+        file_ext = resume.filename.split(".")[-1].lower()
+
+        resume_key = (
+            f"{folder}/mentor_{user['id']}/resume.{file_ext}"
+        )
+
+        r2 = get_r2_client()
+
+        r2.upload_fileobj(
+            resume.file,
+            bucket_name,
+            resume_key,
+            ExtraArgs={
+                "ContentType": resume.content_type,
+            },
+        )
+
+        cur.execute(
+            """
+            UPDATE users
+            SET
+                designation = %s,
+                experience_years = %s,
+                experience_months = %s,
+                mentor_resume_key = %s,
+                mentor_resume_filename = %s,
+                mentor_resume_uploaded_at = NOW(),
+                updated_at = NOW()
+            WHERE firebase_uid = %s
+            RETURNING
+                id,
+                display_name,
+                role,
+                designation,
+                experience_years,
+                experience_months,
+                mentor_resume_key,
+                mentor_resume_filename,
+                mentor_resume_uploaded_at
+            """,
+            (
+                designation,
+                experience_years,
+                experience_months,
+                resume_key,
+                resume.filename,
+                firebase_uid,
+            )
+        )
+
+        updated = dict(cur.fetchone())
+
+        conn.commit()
+
+        return {
+            "status": "updated",
+            "mentor": updated
+        }
+
+    except HTTPException:
+        conn.rollback()
+        raise
+
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Mentor profile update failed: {str(e)}"
+        )
+
+    finally:
+        conn.close()
