@@ -810,3 +810,287 @@ def create_my_profile(
         raise HTTPException(status_code=500, detail=f"Profile creation failed: {str(e)}")
     finally:
         conn.close()
+
+
+@router.get("/mentor/designations")
+def get_mentor_designations():
+    """
+    Returns available mentor designations grouped by professional field.
+    Used for mentor profile dropdown selection.
+    """
+
+    designations = {
+        "Software Development": [
+            "Software Engineer",
+            "Senior Software Engineer",
+            "Backend Developer",
+            "Frontend Developer",
+            "Full Stack Developer",
+            "Python Developer",
+            "Java Developer",
+            ".NET Developer",
+            "PHP Developer",
+            "Node.js Developer",
+            "React Developer",
+            "Angular Developer",
+            "Flutter Developer",
+            "Android Developer",
+            "iOS Developer",
+            "Mobile App Developer",
+            "Game Developer",
+            "Embedded Software Engineer",
+            "Application Developer",
+            "Software Architect",
+            "Technical Lead",
+            "Engineering Manager"
+        ],
+
+        "Data Science and AI": [
+            "Data Scientist",
+            "Senior Data Scientist",
+            "Machine Learning Engineer",
+            "AI Engineer",
+            "Deep Learning Engineer",
+            "NLP Engineer",
+            "Computer Vision Engineer",
+            "Generative AI Engineer",
+            "LLM Engineer",
+            "Prompt Engineer",
+            "MLOps Engineer",
+            "AI Research Engineer",
+            "Data Analyst",
+            "Business Intelligence Analyst",
+            "Research Scientist"
+        ],
+
+        "Data Engineering": [
+            "Data Engineer",
+            "Senior Data Engineer",
+            "Big Data Engineer",
+            "ETL Developer",
+            "Data Warehouse Engineer",
+            "Database Developer",
+            "Database Administrator",
+            "Analytics Engineer"
+        ],
+
+        "Cloud and DevOps": [
+            "DevOps Engineer",
+            "Senior DevOps Engineer",
+            "Cloud Engineer",
+            "AWS Engineer",
+            "Azure Engineer",
+            "Google Cloud Engineer",
+            "Cloud Architect",
+            "Site Reliability Engineer",
+            "Platform Engineer",
+            "Infrastructure Engineer",
+            "Kubernetes Engineer",
+            "Release Engineer",
+            "Build Engineer"
+        ],
+
+        "Cybersecurity": [
+            "Cybersecurity Analyst",
+            "Security Engineer",
+            "Application Security Engineer",
+            "Cloud Security Engineer",
+            "Network Security Engineer",
+            "SOC Analyst",
+            "Penetration Tester",
+            "Ethical Hacker",
+            "Security Consultant",
+            "Security Architect",
+            "Incident Response Analyst",
+            "Digital Forensics Analyst",
+            "GRC Analyst"
+        ],
+
+        "Testing and Quality Assurance": [
+            "QA Engineer",
+            "Software Test Engineer",
+            "Automation Test Engineer",
+            "Manual Test Engineer",
+            "Performance Test Engineer",
+            "SDET",
+            "QA Lead",
+            "Test Manager"
+        ],
+
+        "Product and Project Management": [
+            "Product Manager",
+            "Senior Product Manager",
+            "Technical Product Manager",
+            "Product Owner",
+            "Project Manager",
+            "Technical Project Manager",
+            "Program Manager",
+            "Scrum Master",
+            "Delivery Manager"
+        ],
+
+        "UI UX and Design": [
+            "UI Designer",
+            "UX Designer",
+            "UI/UX Designer",
+            "Product Designer",
+            "Graphic Designer",
+            "Interaction Designer",
+            "Visual Designer",
+            "UX Researcher"
+        ],
+
+        "Networking and IT": [
+            "Network Engineer",
+            "Network Administrator",
+            "System Administrator",
+            "Linux Administrator",
+            "Windows Administrator",
+            "IT Support Engineer",
+            "Technical Support Engineer",
+            "IT Administrator",
+            "Infrastructure Specialist"
+        ],
+
+        "Business and Management": [
+            "Business Analyst",
+            "Senior Business Analyst",
+            "Management Consultant",
+            "Business Consultant",
+            "Operations Manager",
+            "Strategy Consultant",
+            "Business Development Manager",
+            "Account Manager"
+        ],
+
+        "Finance and Accounting": [
+            "Accountant",
+            "Chartered Accountant",
+            "Financial Analyst",
+            "Investment Analyst",
+            "Equity Research Analyst",
+            "Risk Analyst",
+            "Credit Analyst",
+            "Auditor",
+            "Tax Consultant",
+            "Finance Manager",
+            "Investment Banker"
+        ],
+
+        "Human Resources": [
+            "HR Executive",
+            "HR Manager",
+            "HR Business Partner",
+            "Talent Acquisition Specialist",
+            "Recruiter",
+            "Technical Recruiter",
+            "Learning and Development Manager"
+        ],
+
+        "Marketing and Sales": [
+            "Digital Marketing Specialist",
+            "Marketing Manager",
+            "SEO Specialist",
+            "SEM Specialist",
+            "Social Media Manager",
+            "Content Marketing Manager",
+            "Brand Manager",
+            "Sales Executive",
+            "Sales Manager",
+            "Business Development Executive"
+        ],
+
+        "Mechanical Engineering": [
+            "Mechanical Engineer",
+            "Design Engineer",
+            "Production Engineer",
+            "Manufacturing Engineer",
+            "Maintenance Engineer",
+            "Quality Engineer",
+            "Automotive Engineer",
+            "HVAC Engineer",
+            "CAD Engineer"
+        ],
+
+        "Civil Engineering": [
+            "Civil Engineer",
+            "Structural Engineer",
+            "Site Engineer",
+            "Construction Engineer",
+            "Planning Engineer",
+            "Quantity Surveyor",
+            "Project Engineer",
+            "Geotechnical Engineer"
+        ],
+
+        "Electrical and Electronics": [
+            "Electrical Engineer",
+            "Electronics Engineer",
+            "Power Systems Engineer",
+            "Control Systems Engineer",
+            "Instrumentation Engineer",
+            "Embedded Systems Engineer",
+            "VLSI Engineer",
+            "PCB Design Engineer"
+        ],
+
+        "Healthcare": [
+            "Doctor",
+            "Nurse",
+            "Pharmacist",
+            "Clinical Research Associate",
+            "Medical Representative",
+            "Healthcare Administrator",
+            "Medical Coder",
+            "Medical Lab Technician"
+        ],
+
+        "Education": [
+            "Teacher",
+            "Lecturer",
+            "Assistant Professor",
+            "Professor",
+            "Academic Counselor",
+            "Instructional Designer",
+            "Corporate Trainer"
+        ],
+
+        "Legal": [
+            "Lawyer",
+            "Legal Associate",
+            "Legal Consultant",
+            "Corporate Lawyer",
+            "Compliance Officer",
+            "Legal Advisor"
+        ],
+
+        "Architecture": [
+            "Architect",
+            "Interior Designer",
+            "Urban Planner",
+            "Landscape Architect",
+            "BIM Engineer"
+        ],
+
+        "Supply Chain and Logistics": [
+            "Supply Chain Analyst",
+            "Supply Chain Manager",
+            "Logistics Coordinator",
+            "Logistics Manager",
+            "Procurement Specialist",
+            "Procurement Manager",
+            "Warehouse Manager"
+        ],
+
+        "Customer Service": [
+            "Customer Support Executive",
+            "Customer Success Manager",
+            "Customer Service Representative",
+            "Technical Support Specialist"
+        ]
+    }
+
+    return {
+        "status": "ok",
+        "designations": designations
+    }
