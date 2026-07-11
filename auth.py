@@ -268,6 +268,7 @@ def login(body: LoginBody):
             "status": "ok",
             "access_token": body.id_token,
             "token_type": "bearer",
+            "role": updated_user["role"],
             "user": updated_user
         }
 
