@@ -1106,7 +1106,7 @@ def get_r2_client():
         region_name="auto",
     )
 
-@router.patch("/mentor/profile")
+@router.patch("/mentor/profile/update")
 def update_mentor_professional_profile(
     designation: str = Form(...),
     experience_years: int = Form(...),
