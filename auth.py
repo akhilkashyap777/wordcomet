@@ -313,7 +313,7 @@ def get_my_profile(current_user: dict = Depends(get_current_user)):
 
 # ─── 4. Update Own Profile ───────────────────────────────────────────
 
-@router.patch("/profile/me")
+@router.patch("/profile/patch")
 def update_my_profile(
     body: UpdateProfileBody,
     current_user: dict = Depends(get_current_user)
@@ -602,7 +602,7 @@ def list_mentors(current_user: dict = Depends(get_current_user)):
     finally:
         conn.close()
 
-@router.put("/profile/me")
+@router.put("/profile/update")
 def replace_my_profile(
     body: UpdateProfileBody,
     current_user: dict = Depends(get_current_user)
@@ -687,7 +687,7 @@ def replace_my_profile(
     finally:
         conn.close()
 
-@router.post("/profile/me", status_code=201)
+@router.post("/profile/create", status_code=201)
 def create_my_profile(
     body: UpdateProfileBody,
     current_user: dict = Depends(get_current_user)
