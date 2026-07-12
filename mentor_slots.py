@@ -105,7 +105,7 @@ def require_role(db_user: dict, role: str):
 # ─── Pydantic Models ─────────────────────────────────────────────────
 
 class CreateAvailabilityBody(BaseModel):
-    day_of_week: str = Field(..., examples=["Monday"])
+    availability_date: date
     start_time: str = Field(..., examples=["19:00"])
     end_time: str = Field(..., examples=["21:00"])
     slot_duration_minutes: int = Field(60, gt=0, examples=[60])
@@ -178,9 +178,6 @@ def create_availability(
     db_user = get_db_user_by_firebase_uid(current_user["uid"])
     require_role(db_user, "mentor")
 
-    if body.day_of_week not in VALID_DAYS:
-        raise HTTPException(status_code=400, detail="Invalid day_of_week.")
-
     start_t = parse_hhmm(body.start_time)
     end_t = parse_hhmm(body.end_time)
     if start_t >= end_t:
@@ -192,11 +189,11 @@ def create_availability(
         cur.execute(
             """
             INSERT INTO mentor_availability
-                (mentor_id, day_of_week, start_time, end_time, slot_duration_minutes, is_active, created_at)
+                (mentor_id, availability_date, start_time, end_time, slot_duration_minutes, is_active, created_at)
             VALUES (%s, %s, %s, %s, %s, TRUE, NOW())
             RETURNING *
             """,
-            (db_user["id"], body.day_of_week, start_t, end_t, body.slot_duration_minutes),
+            (db_user["id"], body.availability_date, start_t, end_t, body.slot_duration_minutes),
         )
         availability = dict(cur.fetchone())
         conn.commit()
@@ -293,7 +290,6 @@ def get_mentor_slots(mentor_id: int, session_date: date):
     Shows generated slots for one mentor on one date.
     Already booked slots are returned as is_booked=true.
     """
-    day_name = session_date.strftime("%A")
 
     conn = get_db()
     try:
@@ -311,11 +307,11 @@ def get_mentor_slots(mentor_id: int, session_date: date):
             SELECT *
             FROM mentor_availability
             WHERE mentor_id = %s
-              AND day_of_week = %s
-              AND is_active = TRUE
+                AND availability_date = %s
+                AND is_active = TRUE
             ORDER BY start_time
             """,
-            (mentor_id, day_name),
+            (mentor_id, session_date),
         )
         availability_rows = cur.fetchall()
 
@@ -371,8 +367,6 @@ def book_slot(
     if datetime.combine(body.session_date, start_t) <= datetime.utcnow():
         raise HTTPException(status_code=400, detail="Cannot book a past slot.")
 
-    day_name = body.session_date.strftime("%A")
-
     conn = get_db()
     try:
         cur = conn.cursor()
@@ -389,23 +383,23 @@ def book_slot(
             cur.execute(
                 """
                 SELECT * FROM mentor_availability
-                WHERE id = %s AND mentor_id = %s AND day_of_week = %s AND is_active = TRUE
+                WHERE id = %s AND mentor_id = %s AND availability_date = %s AND is_active = TRUE
                 """,
-                (body.availability_id, body.mentor_id, day_name),
+                (body.availability_id, body.mentor_id, body.session_date),
             )
         else:
             cur.execute(
                 """
                 SELECT * FROM mentor_availability
                 WHERE mentor_id = %s
-                  AND day_of_week = %s
+                  AND availability_date = %s
                   AND start_time <= %s
                   AND end_time >= %s
                   AND is_active = TRUE
                 ORDER BY start_time
                 LIMIT 1
                 """,
-                (body.mentor_id, day_name, start_t, end_t),
+                (body.mentor_id, body.session_date, start_t, end_t),
             )
 
         availability = cur.fetchone()
