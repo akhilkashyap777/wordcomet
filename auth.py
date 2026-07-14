@@ -100,8 +100,6 @@ class UpdateProfileBody(BaseModel):
     notifications_enabled: Optional[bool] = None
 
     # mentor fields
-    interview_field: Optional[str] = None
-    interview_subjects: Optional[list[str]] = None
     bio: Optional[str] = None
 
     # mentee fields
@@ -384,15 +382,6 @@ def update_my_profile(
 
     if body.phone_number is not None:
         fields["phone_number"] = body.phone_number
-    if body.interview_field is not None:
-        if role != "mentor":
-            raise HTTPException(status_code=403, detail="Only mentors can update interview_field.")
-        fields["interview_field"] = body.interview_field
-
-    if body.interview_subjects is not None:
-        if role != "mentor":
-            raise HTTPException(status_code=403, detail="Only mentors can update interview_subjects.")
-        fields["interview_subjects"] = body.interview_subjects
 
     if body.bio is not None:
         if role != "mentor":
@@ -591,8 +580,6 @@ def list_mentors(current_user: dict = Depends(get_current_user)):
                 full_name,
                 profile_picture_url,
                 bio,
-                interview_field,
-                interview_subjects,
                 average_rating,
                 rating_count
             FROM users
@@ -648,8 +635,6 @@ def replace_my_profile(
         }
 
         if role == "mentor":
-            update_data["interview_field"] = body.interview_field
-            update_data["interview_subjects"] = body.interview_subjects
             update_data["bio"] = body.bio
 
         if role == "mentee":
@@ -756,15 +741,6 @@ def create_my_profile(
         if body.phone_number is not None:
             fields["phone_number"] = body.phone_number
 
-        if body.interview_field is not None:
-            if role != "mentor":
-                raise HTTPException(status_code=403, detail="Only mentors can add interview_field.")
-            fields["interview_field"] = body.interview_field
-
-        if body.interview_subjects is not None:
-            if role != "mentor":
-                raise HTTPException(status_code=403, detail="Only mentors can add interview_subjects.")
-            fields["interview_subjects"] = body.interview_subjects
 
         if body.bio is not None:
             if role != "mentor":

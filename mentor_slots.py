@@ -764,9 +764,7 @@ def mentor_get_student_booking_details(
                 u.email AS student_email,
                 u.profile_picture_url AS student_picture,
 
-                u.qualification,
-                u.interview_field,
-                u.interview_subjects
+                u.qualification
 
             FROM mentor_bookings b
             JOIN users u ON u.id = b.mentee_id
@@ -800,8 +798,6 @@ def mentor_get_student_booking_details(
                 "email": row["student_email"],
                 "profile_picture_url": row["student_picture"],
                 "qualification": row["qualification"],
-                "interview_field": row["interview_field"],
-                "interview_subjects": row["interview_subjects"],
             },
 
             "resume": {
@@ -845,8 +841,6 @@ def mentee_get_mentor_booking_details(
                 u.email AS mentor_email,
                 u.profile_picture_url AS mentor_picture,
                 u.bio AS mentor_bio,
-                u.interview_field,
-                u.interview_subjects,
                 u.average_rating,
                 u.rating_count
 
@@ -882,8 +876,6 @@ def mentee_get_mentor_booking_details(
                 "email": row["mentor_email"],
                 "profile_picture_url": row["mentor_picture"],
                 "bio": row["mentor_bio"],
-                "interview_field": row["interview_field"],
-                "interview_subjects": row["interview_subjects"],
                 "average_rating": row["average_rating"],
                 "rating_count": row["rating_count"],
             },
