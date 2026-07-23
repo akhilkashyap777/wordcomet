@@ -442,6 +442,7 @@
       <div class="peer-status">● connected</div>
     </div>
 
+    <video id="localVideo" autoplay playsinline muted></video>
     <video id="remoteScreen" autoplay playsinline></video>
 
     <button onclick="startScreenShare()">Share Screen</button>
@@ -502,7 +503,185 @@
   let ws           = null;
   let currentRoomId = null;
   let pc = null;
+  let localMediaStream = null;
   let localScreenStream = null;
+
+  function createPeerConnection() {
+    if (pc) {
+      console.log("Peer connection already exists.");
+      return pc;
+    }
+
+    pc = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: "stun:stun.l.google.com:19302"
+        }
+      ]
+    });
+
+    console.log("RTCPeerConnection created.");
+
+    pc.ontrack = (event) => {
+      console.log("Remote track received:", event.track.kind);
+
+      const remoteScreen = document.getElementById("remoteScreen");
+
+      if (event.streams && event.streams[0]) {
+        remoteScreen.srcObject = event.streams[0];
+      } else {
+        const remoteStream =
+          remoteScreen.srcObject instanceof MediaStream
+            ? remoteScreen.srcObject
+            : new MediaStream();
+
+        remoteStream.addTrack(event.track);
+        remoteScreen.srcObject = remoteStream;
+      }
+
+      remoteScreen.play().catch((error) => {
+        console.error("Remote video play failed:", error);
+      });
+    };
+
+    pc.onicecandidate = (event) => {
+    if (!event.candidate) {
+      console.log("ICE gathering completed.");
+      return;
+    }
+
+    console.log("Local ICE candidate generated:", event.candidate);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: "ice_candidate",
+        candidate: event.candidate
+      }));
+
+      appendLog("→ ICE candidate sent", "out");
+    }
+
+    // pc.onicecandidate = (event) => {
+    //   if (!event.candidate) {
+    //     console.log("ICE gathering completed.");
+    //     return;
+    //   }
+
+    //   console.log("Local ICE candidate generated:", event.candidate);
+
+      /*
+        We are only logging the ICE candidate in this first step.
+        Sending it through the WebSocket will be added later.
+      */
+   };
+
+    pc.onconnectionstatechange = () => {
+      console.log("Peer connection state:", pc.connectionState);
+      appendLog(
+        `Peer connection: ${pc.connectionState}`,
+        "sys"
+      );
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", pc.iceConnectionState);
+    };
+
+    pc.onicegatheringstatechange = () => {
+      console.log("ICE gathering state:", pc.iceGatheringState);
+    };
+
+    pc.onsignalingstatechange = () => {
+      console.log("Signaling state:", pc.signalingState);
+    };
+
+    return pc;
+  }
+
+  async function startCamera() {
+    try {
+      if (localMediaStream) {
+        return localMediaStream;
+      }
+
+      localMediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      });
+
+      const localVideo = document.getElementById("localVideo");
+      localVideo.srcObject = localMediaStream;
+
+      createPeerConnection();
+
+      localMediaStream.getTracks().forEach((track) => {
+        pc.addTrack(track, localMediaStream);
+      });
+
+      appendLog("Camera and microphone started", "sys");
+      console.log("Local media tracks added.");
+
+      return localMediaStream;
+
+    } catch (error) {
+      console.error("Camera/microphone error:", error);
+      appendLog("Camera or microphone permission failed", "sys");
+      showToast("Allow camera and microphone access.", "error");
+      throw error;
+    }
+  }
+
+  async function createAndSendOffer() {
+    try {
+      createPeerConnection();
+
+      await startCamera();
+
+      const offer = await pc.createOffer();
+
+      await pc.setLocalDescription(offer);
+
+      ws.send(JSON.stringify({
+        type: "offer",
+        sdp: pc.localDescription
+      }));
+
+      appendLog("→ WebRTC offer sent", "out");
+      console.log("Offer sent:", pc.localDescription);
+
+    } catch (error) {
+      console.error("Failed to create offer:", error);
+      appendLog("Failed to create offer", "sys");
+    }
+  }
+
+  async function handleOfferAndSendAnswer(offerSdp) {
+    try {
+      createPeerConnection();
+
+      await startCamera();
+
+      await pc.setRemoteDescription(
+        new RTCSessionDescription(offerSdp)
+      );
+
+      const answer = await pc.createAnswer();
+
+      await pc.setLocalDescription(answer);
+
+      ws.send(JSON.stringify({
+        type: "answer",
+        sdp: pc.localDescription
+      }));
+
+      appendLog("→ WebRTC answer sent", "out");
+      console.log("Answer sent:", pc.localDescription);
+
+    } catch (error) {
+      console.error("Failed to handle offer:", error);
+      appendLog("Failed to handle offer", "sys");
+    }
+  }
 
   // ── Role mapping ────────────────────────────────────────────────────
   // DB stores mentor/mentee — WebSocket uses teacher/student
@@ -619,6 +798,55 @@
           return;
         }
 
+        if (msg.type === "peer_ready") {
+          appendLog("Peer is ready", "sys");
+
+          createPeerConnection();
+
+          if (msg.should_create_offer === true) {
+            await createAndSendOffer();
+          }
+
+          return;
+        }
+
+        if (msg.type === "offer") {
+          appendLog("← WebRTC offer received", "in");
+
+          await handleOfferAndSendAnswer(msg.sdp);
+
+          return;
+        }
+
+        if (msg.type === "answer") {
+          appendLog("← WebRTC answer received", "in");
+
+          await pc.setRemoteDescription(
+            new RTCSessionDescription(msg.sdp)
+          );
+
+          console.log("Remote answer applied:", msg.sdp);
+
+          return;
+        }
+
+        if (msg.type === "ice_candidate") {
+          appendLog("← ICE candidate received", "in");
+
+          try {
+            await pc.addIceCandidate(
+              new RTCIceCandidate(msg.candidate)
+            );
+
+            console.log("Remote ICE candidate added:", msg.candidate);
+
+          } catch (error) {
+            console.error("Failed to add ICE candidate:", error);
+          }
+
+          return;
+        }
+
         appendLog(`← ${event.data}`, "in");
       };
 
@@ -650,8 +878,37 @@
 
   // ── End session ──────────────────────────────────────────────────────
 
+  // window.endSession = function() {
+  //   if (ws) { ws.close(); ws = null; }
+  //   currentRoomId = null;
+  //   showState("stateIdle");
+  //   showToast("Session ended.");
+  // };
+
   window.endSession = function() {
-    if (ws) { ws.close(); ws = null; }
+    if (localMediaStream) {
+      localMediaStream.getTracks().forEach((track) => track.stop());
+      localMediaStream = null;
+    }
+
+    if (localScreenStream) {
+      localScreenStream.getTracks().forEach((track) => track.stop());
+      localScreenStream = null;
+    }
+
+    if (pc) {
+      pc.close();
+      pc = null;
+    }
+
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+
+    document.getElementById("localVideo").srcObject = null;
+    document.getElementById("remoteScreen").srcObject = null;
+
     currentRoomId = null;
     showState("stateIdle");
     showToast("Session ended.");
