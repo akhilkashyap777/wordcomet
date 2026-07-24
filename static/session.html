@@ -29,7 +29,8 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   /* ── grid bg ── */
@@ -103,7 +104,7 @@
   .main {
     flex: 1; position: relative; z-index: 5;
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
+    align-items: center; justify-content: flex-start;
     padding: 32px 20px;
   }
 
@@ -506,6 +507,174 @@
   let localMediaStream = null;
   let localScreenStream = null;
 
+  window.rtcDebug = {
+    report() {
+      const localVideo = document.getElementById("localVideo");
+      const remoteVideo = document.getElementById("remoteScreen");
+
+      const senders = pc?.getSenders() || [];
+      const receivers = pc?.getReceivers() || [];
+      const transceivers = pc?.getTransceivers() || [];
+
+      const report = {
+        websocket: {
+          exists: Boolean(ws),
+          state: ws?.readyState,
+          stateName: ws
+            ? ["CONNECTING", "OPEN", "CLOSING", "CLOSED"][ws.readyState]
+            : "NOT CREATED"
+        },
+
+        peerConnection: {
+          exists: Boolean(pc),
+          connectionState: pc?.connectionState ?? "NO PC",
+          iceConnectionState: pc?.iceConnectionState ?? "NO PC",
+          iceGatheringState: pc?.iceGatheringState ?? "NO PC",
+          signalingState: pc?.signalingState ?? "NO PC",
+          localDescriptionType: pc?.localDescription?.type ?? null,
+          remoteDescriptionType: pc?.remoteDescription?.type ?? null
+        },
+
+        localMediaStream: {
+          exists: Boolean(localMediaStream),
+          active: localMediaStream?.active ?? false,
+          tracks: localMediaStream?.getTracks().map(track => ({
+            kind: track.kind,
+            enabled: track.enabled,
+            muted: track.muted,
+            readyState: track.readyState,
+            label: track.label
+          })) || []
+        },
+
+        screenStream: {
+          exists: Boolean(localScreenStream),
+          active: localScreenStream?.active ?? false,
+          tracks: localScreenStream?.getTracks().map(track => ({
+            kind: track.kind,
+            enabled: track.enabled,
+            muted: track.muted,
+            readyState: track.readyState,
+            label: track.label
+          })) || []
+        },
+
+        senders: senders.map((sender, index) => ({
+          index,
+          hasTrack: Boolean(sender.track),
+          kind: sender.track?.kind ?? null,
+          readyState: sender.track?.readyState ?? null,
+          enabled: sender.track?.enabled ?? null
+        })),
+
+        receivers: receivers.map((receiver, index) => ({
+          index,
+          hasTrack: Boolean(receiver.track),
+          kind: receiver.track?.kind ?? null,
+          readyState: receiver.track?.readyState ?? null
+        })),
+
+        transceivers: transceivers.map((transceiver, index) => ({
+          index,
+          direction: transceiver.direction,
+          currentDirection: transceiver.currentDirection,
+          senderKind: transceiver.sender.track?.kind ?? null,
+          receiverKind: transceiver.receiver.track?.kind ?? null
+        })),
+
+        videoElements: {
+          localHasStream: Boolean(localVideo?.srcObject),
+          remoteHasStream: Boolean(remoteVideo?.srcObject),
+          localReadyState: localVideo?.readyState,
+          remoteReadyState: remoteVideo?.readyState
+        }
+      };
+
+      console.log("========== WEBRTC DIAGNOSTIC ==========");
+      console.log(report);
+      console.table(report.senders);
+      console.table(report.receivers);
+      console.table(report.transceivers);
+
+      if (!pc) {
+        console.error("❌ RTCPeerConnection has not been created.");
+      } else if (!localMediaStream) {
+        console.error(
+          "❌ Camera has not started. startCamera() was never completed."
+        );
+      } else if (!senders.some(sender => sender.track?.kind === "video")) {
+        console.error(
+          "❌ Camera stream exists, but no video track was added to the peer connection."
+        );
+      } else if (!pc.remoteDescription) {
+        console.warn(
+          "⚠️ No remote description. Offer/answer exchange is incomplete."
+        );
+      } else if (
+        !["connected", "completed"].includes(pc.iceConnectionState)
+      ) {
+        console.warn(
+          `⚠️ ICE is not connected: ${pc.iceConnectionState}`
+        );
+      } else {
+        console.log("✅ Basic WebRTC state looks valid.");
+      }
+
+      return report;
+    },
+
+    async permissions() {
+      const results = {};
+
+      for (const name of ["camera", "microphone"]) {
+        try {
+          results[name] = await navigator.permissions.query({ name });
+        } catch (error) {
+          results[name] = {
+            state: "unsupported",
+            error: error.message
+          };
+        }
+      }
+
+      console.log("========== MEDIA PERMISSIONS ==========");
+      console.log({
+        camera: results.camera?.state,
+        microphone: results.microphone?.state
+      });
+
+      return results;
+    },
+
+    async devices() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+
+      console.table(
+        devices.map(device => ({
+          kind: device.kind,
+          label: device.label || "Permission not granted",
+          deviceId: device.deviceId
+            ? `${device.deviceId.slice(0, 10)}...`
+            : ""
+        }))
+      );
+
+      return devices;
+    },
+
+    get pc() {
+      return pc;
+    },
+
+    get ws() {
+      return ws;
+    },
+
+    get localStream() {
+      return localMediaStream;
+    }
+  };
+
   function createPeerConnection() {
     if (pc) {
       console.log("Peer connection already exists.");
@@ -605,8 +774,20 @@
       }
 
       localMediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: {
+              ideal: 30,
+              max: 30
+            },
+            facingMode: "user"
+        },
+        audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+        }
       });
 
       const localVideo = document.getElementById("localVideo");
@@ -637,14 +818,26 @@
 
       await startCamera();
 
+      console.log("========== CREATING OFFER ==========");
+      console.log("PC before createOffer:", pc);
+      console.log("Signaling state before offer:", pc.signalingState);
+      console.log("Senders before offer:", pc.getSenders());
+
       const offer = await pc.createOffer();
+      console.log("Offer created:", offer);
 
       await pc.setLocalDescription(offer);
+      console.log("Local offer applied.");
+      console.log("pc.localDescription:", pc.localDescription);
+      console.log("Signaling state after local offer:", pc.signalingState);
+
+      console.log("Sending offer through WebSocket...");
 
       ws.send(JSON.stringify({
         type: "offer",
         sdp: pc.localDescription
       }));
+      console.log("Offer sent through WebSocket.");
 
       appendLog("→ WebRTC offer sent", "out");
       console.log("Offer sent:", pc.localDescription);
@@ -665,14 +858,23 @@
         new RTCSessionDescription(offerSdp)
       );
 
+      console.log("Creating answer...");
       const answer = await pc.createAnswer();
+      console.log("Answer created:", answer);
 
       await pc.setLocalDescription(answer);
+      console.log("Local answer applied.");
+      console.log("pc.localDescription:", pc.localDescription);
+      console.log("Signaling state after local answer:", pc.signalingState);
+
+      console.log("Sending answer through WebSocket...");
 
       ws.send(JSON.stringify({
         type: "answer",
         sdp: pc.localDescription
       }));
+
+      console.log("Answer sent through WebSocket.");
 
       appendLog("→ WebRTC answer sent", "out");
       console.log("Answer sent:", pc.localDescription);
@@ -725,7 +927,7 @@
 
   // ── Connect ──────────────────────────────────────────────────────────
 
-  function onJoinedBookedRoom(msg) {
+  async function onJoinedBookedRoom(msg) {
     showState("statePaired");
 
     document.getElementById("roomIdLabel").textContent =
@@ -744,6 +946,13 @@
     showToast("Joined booked session.", "success");
 
     createPeerConnection();
+
+    try {
+      await startCamera();
+      console.log("Camera and microphone ready after room join.");
+    } catch (error) {
+      console.error("Failed to start camera after joining room:", error);
+    }
   }
 
   window.connect = async function () {
@@ -785,25 +994,33 @@
       };
 
       ws.onmessage = async (event) => {
+        console.log("========== WEBSOCKET MESSAGE RECEIVED ==========");
+        console.log("Raw WebSocket data:", event.data);
         let msg;
         try {
           msg = JSON.parse(event.data);
+          console.log("Parsed WebSocket message:", msg);
+          console.log("Message type:", msg.type);
         } catch {
           appendLog(`← ${event.data}`, "in");
           return;
         }
 
         if (msg.type === "joined") {
-          onJoinedBookedRoom(msg);
+          await onJoinedBookedRoom(msg);
           return;
         }
 
         if (msg.type === "peer_ready") {
           appendLog("Peer is ready", "sys");
+          console.log("========== PEER READY ==========");
+          console.log("peer_ready payload:", msg);
+          console.log("Should create offer:", msg.should_create_offer);
 
           createPeerConnection();
 
           if (msg.should_create_offer === true) {
+            console.log("This frontend will create the offer.");
             await createAndSendOffer();
           }
 
@@ -812,8 +1029,14 @@
 
         if (msg.type === "offer") {
           appendLog("← WebRTC offer received", "in");
+          console.log("========== OFFER RECEIVED ==========");
+          console.log("Offer payload:", msg);
+          console.log("Offer SDP:", msg.sdp);
+          console.log("PC signaling state before handling offer:", pc?.signalingState);
 
           await handleOfferAndSendAnswer(msg.sdp);
+
+          console.log("Offer handled and answer process completed.");
 
           return;
         }
@@ -821,11 +1044,28 @@
         if (msg.type === "answer") {
           appendLog("← WebRTC answer received", "in");
 
-          await pc.setRemoteDescription(
-            new RTCSessionDescription(msg.sdp)
-          );
+          try {
+            if (!pc) {
+              console.error("Cannot apply answer: peer connection does not exist.");
+              return;
+            }
 
-          console.log("Remote answer applied:", msg.sdp);
+            console.log("========== ANSWER RECEIVED ==========");
+            console.log("Answer SDP:", msg.sdp);
+            console.log("Signaling state before answer:", pc.signalingState);
+
+            await pc.setRemoteDescription(
+              new RTCSessionDescription(msg.sdp)
+            );
+
+            console.log("Remote answer applied.");
+            console.log("Remote description:", pc.remoteDescription);
+            console.log("Signaling state after answer:", pc.signalingState);
+
+          } catch (error) {
+            console.error("Failed to apply remote answer:", error);
+            appendLog("Failed to apply WebRTC answer", "sys");
+          }
 
           return;
         }
@@ -874,6 +1114,54 @@
     ws.send(text);
     appendLog(`→ ${text}`, "out");
     input.value = "";
+  };
+
+  window.startScreenShare = async function () {
+
+    console.log("========== START SCREEN SHARE ==========");
+    console.log("Button clicked");
+      try {
+          if (!pc) {
+              showToast("Peer connection is not ready.", "error");
+              return;
+          }
+
+          localScreenStream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: false
+          });
+
+          const screenTrack = localScreenStream.getVideoTracks()[0];
+
+          const videoSender = pc.getSenders().find(
+              sender => sender.track && sender.track.kind === "video"
+          );
+
+          if (!videoSender) {
+              showToast("No video sender found.", "error");
+              screenTrack.stop();
+              return;
+          }
+
+          // Replace camera video with screen video
+          await videoSender.replaceTrack(screenTrack);
+
+          // Show your shared screen locally
+          document.getElementById("localVideo").srcObject = localScreenStream;
+
+          appendLog("Screen sharing started", "sys");
+          showToast("Screen sharing started.", "success");
+
+          // When the browser's Stop sharing button is clicked
+          screenTrack.onended = async () => {
+              await stopScreenShare(videoSender);
+          };
+
+      } catch (error) {
+          console.error("Screen sharing failed:", error);
+          appendLog("Screen sharing failed", "sys");
+          showToast("Screen sharing was cancelled or failed.", "error");
+      }
   };
 
   // ── End session ──────────────────────────────────────────────────────
