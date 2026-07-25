@@ -17,6 +17,9 @@ chat_rooms = {}
 @router.get("/turn-credentials")
 async def get_turn_credentials():
     """Generate short-lived TURN credentials for a client."""
+    print("TURN_TOKEN_ID loaded:", bool(TURN_TOKEN_ID))
+    print("TURN_API_TOKEN loaded:", bool(TURN_API_TOKEN))
+    print("TURN_API_TOKEN length:", len(TURN_API_TOKEN or ""))
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"https://rtc.live.cloudflare.com/v1/turn/keys/{TURN_TOKEN_ID}/credentials/generate-ice-servers",
@@ -26,9 +29,17 @@ async def get_turn_credentials():
             },
             json={"ttl": 86400},
         )
+        print("CLOUDFLARE STATUS:", response.status_code)
+        print("CLOUDFLARE BODY:", response.text)
+
+    print("STATUS:", response.status_code)
+    print("BODY:", response.text)
 
     if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to get TURN credentials.")
+        raise HTTPException(
+            status_code=500,
+            detail=response.text
+        )
 
     return response.json()
 
