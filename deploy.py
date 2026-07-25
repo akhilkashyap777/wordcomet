@@ -22,8 +22,8 @@ from fastapi.staticfiles import StaticFiles
 
 # from database import db_session
 
-#load_dotenv()
-load_dotenv("/var/www/wordcomet/.env")
+load_dotenv()
+#load_dotenv("/var/www/wordcomet/.env")
 
 import firebase_admin
 from firebase_admin import credentials, messaging

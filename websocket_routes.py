@@ -3,9 +3,21 @@ import httpx
 from datetime import datetime
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 import os
+import psycopg2
+import psycopg2.extras
 
 
 router = APIRouter()
+
+def get_db():
+    return psycopg2.connect(
+        dbname=os.environ.get("DB_NAME", "wordcomet"),
+        user=os.environ.get("DB_USER", "wordcomet_user"),
+        password=os.environ.get("DB_PASSWORD", ""),
+        host=os.environ.get("DB_HOST", "127.0.0.1"),
+        port=os.environ.get("DB_PORT", "5432"),
+        cursor_factory=psycopg2.extras.RealDictCursor,
+    )
 
 TURN_TOKEN_ID = os.environ.get("TURN_TOKEN_ID")
 TURN_API_TOKEN = os.environ.get("TURN_API_TOKEN")
@@ -46,6 +58,8 @@ async def get_turn_credentials():
 @router.websocket("/ws/chat/{room_id}")
 async def chat_websocket(websocket: WebSocket, room_id: str):
     # Validate booking and session timing
+    conn = get_db()
+    cur = conn.cursor()
     cur.execute("""
         SELECT mentor_id, mentee_id, session_date,
             start_time, end_time
@@ -145,6 +159,9 @@ async def chat_websocket(websocket: WebSocket, room_id: str):
 
         if room_id in chat_rooms and not chat_rooms[room_id]:
             del chat_rooms[room_id]
+
+        cur.close()
+        conn.close()
     # await websocket.accept()
 
     # if room_id not in chat_rooms:
