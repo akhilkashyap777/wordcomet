@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WordComet — Session</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #07070d;
+    --surface:   #0e0e18;
+    --border:    #181828;
+    --border2:   #222235;
+    --accent:    #6c63ff;
+    --accent2:   #ff6584;
+    --green:     #4ade80;
+    --yellow:    #facc15;
+    --text:      #e2e2f0;
+    --muted:     #52526e;
+    --card:      #0f0f1c;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* ── grid bg ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(108,99,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── orbs ── */
+  .orb {
+    position: fixed; border-radius: 50%;
+    filter: blur(110px); opacity: 0.1; pointer-events: none;
+    animation: drift 16s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 600px; height: 600px; background: var(--accent); top: -200px; left: -200px; }
+  .orb2 { width: 400px; height: 400px; background: var(--accent2); bottom: -100px; right: -100px; animation-delay: -7s; }
+  @keyframes drift { from { transform: translate(0,0); } to { transform: translate(40px, 30px); } }
+
+  /* ── topbar ── */
+  .topbar {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(7,7,13,0.85);
+    backdrop-filter: blur(12px);
+  }
+  .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .logo-text {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: 1.1rem; letter-spacing: -0.02em; color: var(--text);
+  }
+  .logo-text span { color: var(--accent); }
+
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 20px; font-size: 0.82rem; color: var(--text);
+  }
+  .user-chip .role-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .user-chip.mentee .role-dot { background: var(--accent2); }
+
+  .btn-settings {
+    background: none; border: 1px solid var(--border2);
+    border-radius: 8px; padding: 6px 13px;
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-settings:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── main layout ── */
+  .main {
+    flex: 1; position: relative; z-index: 5;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    padding: 32px 20px;
+  }
+
+  /* ── states ── */
+  /* All states hidden by default, JS shows correct one */
+  .state { display: none; width: 100%; max-width: 500px; }
+  .state.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* ── NO PROFILE state ── */
+  .no-profile-box {
+    background: var(--card); border: 1px solid var(--border2);
+    border-radius: 20px; padding: 44px 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes rise { from { opacity:0; transform:translateY(20px) scale(0.97); } to { opacity:1; transform:none; } }
+
+  .no-profile-box .big-icon { font-size: 3rem; margin-bottom: 18px; }
+  .no-profile-box h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+  .no-profile-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 24px; }
+  .btn-go-settings {
+    padding: 13px 28px;
+    background: var(--accent); border: none; border-radius: 11px;
+    color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.92rem;
+    cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-go-settings:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* ── IDLE / WAITING state ── */
+  .session-card {
+    background: var(--card); border: 1px solid var(--border2);
+    border-radius: 24px; padding: 48px 44px;
+    text-align: center; width: 100%;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.45);
+    animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  /* availability badge */
+  .avail-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 0.78rem; font-family: 'DM Mono', monospace;
+    margin-bottom: 28px;
+    border: 1px solid transparent;
+  }
+  .avail-badge.available   { background: rgba(74,222,128,0.08); border-color: rgba(74,222,128,0.2); color: var(--green); }
+  .avail-badge.unavailable { background: rgba(255,101,132,0.08); border-color: rgba(255,101,132,0.2); color: var(--accent2); }
+  .avail-badge.loading-b   { background: rgba(108,99,255,0.08); border-color: rgba(108,99,255,0.15); color: var(--accent); }
+  .avail-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.4; transform:scale(0.7); }
+  }
+
+  .session-card h2 {
+    font-family: 'Syne', sans-serif; font-size: 1.7rem;
+    font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px;
+  }
+  .session-card .desc {
+    color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 36px;
+  }
+
+  /* role badge inside card */
+  .role-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 18px; border-radius: 20px; margin-bottom: 28px;
+    font-size: 0.82rem; font-weight: 500;
+    background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2); color: var(--accent);
+  }
+  .role-badge.mentee { background: rgba(255,101,132,0.1); border-color: rgba(255,101,132,0.2); color: var(--accent2); }
+
+  /* connect button */
+  .btn-connect {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none; border-radius: 14px;
+    color: #fff; font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 700; letter-spacing: -0.01em;
+    cursor: pointer; transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 8px 28px rgba(108,99,255,0.25);
+  }
+  .btn-connect:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 12px 36px rgba(108,99,255,0.35); }
+  .btn-connect:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── PAIRED / ACTIVE state ── */
+  .paired-header {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .paired-tag {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 0.8rem; font-family: 'DM Mono', monospace;
+    color: var(--green);
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse-dot 1.4s ease-in-out infinite;
+  }
+  .room-id {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .peer-card {
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border2); border-radius: 16px;
+    padding: 20px 22px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .peer-avatar {
+    width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem;
+  }
+  .peer-info { flex: 1; }
+  .peer-name { font-weight: 500; font-size: 0.95rem; margin-bottom: 3px; }
+  .peer-role { font-size: 0.75rem; color: var(--muted); }
+  .peer-status {
+    font-size: 0.75rem; color: var(--green);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* signal log */
+  .signal-log {
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 16px;
+    max-height: 130px; overflow-y: auto;
+    font-family: 'DM Mono', monospace; font-size: 0.74rem;
+    color: var(--muted); line-height: 1.7;
+  }
+  .signal-log::-webkit-scrollbar { width: 4px; }
+  .signal-log::-webkit-scrollbar-track { background: transparent; }
+  .signal-log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  .log-line { display: flex; gap: 10px; }
+  .log-time { color: #2e2e45; flex-shrink: 0; }
+  .log-in  { color: var(--green); }
+  .log-out { color: var(--accent); }
+  .log-sys { color: var(--yellow); }
+
+  /* send test message */
+  .msg-row {
+    width: 100%; display: flex; gap: 10px; margin-bottom: 16px;
+  }
+  .msg-input {
+    flex: 1; padding: 11px 14px;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 10px; color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 0.82rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .msg-input:focus { border-color: var(--accent); }
+  .msg-input::placeholder { color: var(--muted); }
+  .btn-send {
+    padding: 11px 18px; background: var(--accent);
+    border: none; border-radius: 10px; color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-send:hover { opacity: 0.85; }
+
+  .btn-end {
+    width: 100%; padding: 13px;
+    background: rgba(255,101,132,0.1); border: 1px solid rgba(255,101,132,0.25);
+    border-radius: 12px; color: var(--accent2);
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-end:hover { background: rgba(255,101,132,0.18); }
+
+  /* ── toast ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: #1a1a2e; border: 1px solid var(--border2);
+    border-radius: 10px; padding: 11px 20px;
+    font-size: 0.85rem; color: var(--text);
+    opacity: 0; transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none; z-index: 999; white-space: nowrap;
+  }
+  .toast.show { opacity:1; transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(74,222,128,0.3); color: var(--green); }
+  .toast.error   { border-color: rgba(255,101,132,0.3); color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- ── Topbar ── -->
+<div class="topbar">
+  <a class="logo" href="session.html">
+    <div class="logo-icon">☄️</div>
+    <div class="logo-text">Word<span>Comet</span></div>
+  </a>
+  <div class="topbar-right">
+    <div class="user-chip" id="userChip">
+      <div class="role-dot"></div>
+      <span id="chipName">Loading…</span>
+    </div>
+    <a class="btn-settings" href="settings.html">Profile</a>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- STATE: no profile set up yet -->
+  <div class="state" id="stateNoProfile">
+    <div class="no-profile-box">
+      <div class="big-icon">🔒</div>
+      <h2>Profile incomplete</h2>
+      <p>You need to set your name and role before you can start a session.</p>
+      <button class="btn-go-settings" onclick="window.location.href='settings.html'">
+        Go to Profile →
+      </button>
+      <a class="btn-settings" href="friends.html">Friends</a>
+      <a class="btn-settings" href="booking.html">Mentorship</a>
+    </div>
+  </div>
+
+  <!-- STATE: idle (ready to connect) -->
+  <div class="state" id="stateIdle">
+    <div class="session-card">
+      <div class="avail-badge loading-b" id="availBadge">
+        <div class="avail-dot"></div>
+        <span id="availText">Checking availability…</span>
+      </div>
+
+      <div class="role-badge" id="roleBadge">
+        <span id="roleIcon">🎓</span>
+        <span id="roleLabel">Mentor</span>
+      </div>
+
+      <h2 id="idleTitle">Ready to connect?</h2>
+      <p class="desc" id="idleDesc">Join your currently scheduled mentor session.</p>
+
+      <button class="btn-connect" id="btnConnect" onclick="connect()">
+        Start Session
+      </button>
+    </div>
+  </div>
+
+  <!-- STATE: paired / active session -->
+  <div class="state" id="statePaired">
+    <div class="paired-header">
+      <div class="paired-tag">
+        <div class="live-dot"></div>
+        Session live
+      </div>
+      <div class="room-id" id="roomIdLabel"></div>
+    </div>
+
+    <div class="peer-card">
+      <div class="peer-avatar" id="peerAvatar">?</div>
+      <div class="peer-info">
+        <div class="peer-name" id="peerName">Connected peer</div>
+        <div class="peer-role" id="peerRole"></div>
+      </div>
+      <div class="peer-status">● connected</div>
+    </div>
+
+    <video id="localVideo" autoplay playsinline muted></video>
+    <video id="remoteScreen" autoplay playsinline></video>
+
+    <button onclick="startScreenShare()">Share Screen</button>
+
+    <div class="signal-log" id="signalLog">
+      <div class="log-line"><span class="log-time">--:--:--</span><span class="log-sys">Session started</span></div>
+    </div>
+
+    <div class="msg-row">
+      <input class="msg-input" id="msgInput" placeholder="Send a signal message…" onkeydown="if(event.key==='Enter') sendMsg()"/>
+      <button class="btn-send" onclick="sendMsg()">Send</button>
+    </div>
+
+    
+
+    <button class="btn-end" onclick="endSession()">End Session</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp }                       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ── Config — replace these ─────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyDD0z45h-E_FZTkbjpwm3TJMqNTbSub0B0",
+    authDomain: "wordcomet.firebaseapp.com",
+    projectId: "wordcomet",
+    storageBucket: "wordcomet.firebasestorage.app",
+    messagingSenderId: "218267654833",
+    appId: "1:218267654833:web:1216a59da0632a89d7a090",
+    measurementId: "G-NHRYJRJZ0G"
+  };
+  // __ test credentials _____
+  // const firebaseConfig = {
+  //   apiKey: "AIzaSyAsaTYBk2ypXS4iYzrNCi4Z-aLwq9rCT_8",
+  //   authDomain: "wordcomet-testenv.firebaseapp.com",
+  //   projectId: "wordcomet-testenv",
+  //   storageBucket: "wordcomet-testenv.firebasestorage.app",
+  //   messagingSenderId: "31826666668",
+  //   appId: "1:31826666668:web:4a6f203129577f40962b09",
+  //   measurementId: "G-XRW0S53HG0"
+  // };
+  const BASE_URL = "https://wordcomet.shyapsneon.tech";
+  // const BASE_URL = "http://127.0.0.1:8011";
+  const WS_URL = "wss://wordcomet.shyapsneon.tech";
+  // const WS_URL = "ws://127.0.0.1:8011";
+  // ───────────────────────────────────────────────────────────────────
+
+  const fbApp = initializeApp(firebaseConfig);
+  const auth  = getAuth(fbApp);
+
+  let firebaseUser = null;
+  let userProfile  = null;   // from localStorage
+  let ws           = null;
+  let currentRoomId = null;
+  let pc = null;
+  let localMediaStream = null;
+  let localScreenStream = null;
+  let pendingIceCandidates = [];
+  let cachedIceServers = null;
+
+  window.rtcDebug = {
+    report() {
+      const localVideo = document.getElementById("localVideo");
+      const remoteVideo = document.getElementById("remoteScreen");
+
+      const senders = pc?.getSenders() || [];
+      const receivers = pc?.getReceivers() || [];
+      const transceivers = pc?.getTransceivers() || [];
+
+      const report = {
+        websocket: {
+          exists: Boolean(ws),
+          state: ws?.readyState,
+          stateName: ws
+            ? ["CONNECTING", "OPEN", "CLOSING", "CLOSED"][ws.readyState]
+            : "NOT CREATED"
+        },
+
+        peerConnection: {
+          exists: Boolean(pc),
+          connectionState: pc?.connectionState ?? "NO PC",
+          iceConnectionState: pc?.iceConnectionState ?? "NO PC",
+          iceGatheringState: pc?.iceGatheringState ?? "NO PC",
+          signalingState: pc?.signalingState ?? "NO PC",
+          localDescriptionType: pc?.localDescription?.type ?? null,
+          remoteDescriptionType: pc?.remoteDescription?.type ?? null
+        },
+
+        localMediaStream: {
+          exists: Boolean(localMediaStream),
+          active: localMediaStream?.active ?? false,
+          tracks: localMediaStream?.getTracks().map(track => ({
+            kind: track.kind,
+            enabled: track.enabled,
+            muted: track.muted,
+            readyState: track.readyState,
+            label: track.label
+          })) || []
+        },
+
+        screenStream: {
+          exists: Boolean(localScreenStream),
+          active: localScreenStream?.active ?? false,
+          tracks: localScreenStream?.getTracks().map(track => ({
+            kind: track.kind,
+            enabled: track.enabled,
+            muted: track.muted,
+            readyState: track.readyState,
+            label: track.label
+          })) || []
+        },
+
+        senders: senders.map((sender, index) => ({
+          index,
+          hasTrack: Boolean(sender.track),
+          kind: sender.track?.kind ?? null,
+          readyState: sender.track?.readyState ?? null,
+          enabled: sender.track?.enabled ?? null
+        })),
+
+        receivers: receivers.map((receiver, index) => ({
+          index,
+          hasTrack: Boolean(receiver.track),
+          kind: receiver.track?.kind ?? null,
+          readyState: receiver.track?.readyState ?? null
+        })),
+
+        transceivers: transceivers.map((transceiver, index) => ({
+          index,
+          direction: transceiver.direction,
+          currentDirection: transceiver.currentDirection,
+          senderKind: transceiver.sender.track?.kind ?? null,
+          receiverKind: transceiver.receiver.track?.kind ?? null
+        })),
+
+        videoElements: {
+          localHasStream: Boolean(localVideo?.srcObject),
+          remoteHasStream: Boolean(remoteVideo?.srcObject),
+          localReadyState: localVideo?.readyState,
+          remoteReadyState: remoteVideo?.readyState
+        }
+      };
+
+      console.log("========== WEBRTC DIAGNOSTIC ==========");
+      console.log(report);
+      console.table(report.senders);
+      console.table(report.receivers);
+      console.table(report.transceivers);
+
+      if (!pc) {
+        console.error("❌ RTCPeerConnection has not been created.");
+      } else if (!localMediaStream) {
+        console.error(
+          "❌ Camera has not started. startCamera() was never completed."
+        );
+      } else if (!senders.some(sender => sender.track?.kind === "video")) {
+        console.error(
+          "❌ Camera stream exists, but no video track was added to the peer connection."
+        );
+      } else if (!pc.remoteDescription) {
+        console.warn(
+          "⚠️ No remote description. Offer/answer exchange is incomplete."
+        );
+      } else if (
+        !["connected", "completed"].includes(pc.iceConnectionState)
+      ) {
+        console.warn(
+          `⚠️ ICE is not connected: ${pc.iceConnectionState}`
+        );
+      } else {
+        console.log("✅ Basic WebRTC state looks valid.");
+      }
+
+      return report;
+    },
+
+    async permissions() {
+      const results = {};
+
+      for (const name of ["camera", "microphone"]) {
+        try {
+          results[name] = await navigator.permissions.query({ name });
+        } catch (error) {
+          results[name] = {
+            state: "unsupported",
+            error: error.message
+          };
+        }
+      }
+
+      console.log("========== MEDIA PERMISSIONS ==========");
+      console.log({
+        camera: results.camera?.state,
+        microphone: results.microphone?.state
+      });
+
+      return results;
+    },
+
+    async devices() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+
+      console.table(
+        devices.map(device => ({
+          kind: device.kind,
+          label: device.label || "Permission not granted",
+          deviceId: device.deviceId
+            ? `${device.deviceId.slice(0, 10)}...`
+            : ""
+        }))
+      );
+
+      return devices;
+    },
+
+    get pc() {
+      return pc;
+    },
+
+    get ws() {
+      return ws;
+    },
+
+    get localStream() {
+      return localMediaStream;
+    }
+  };
+
+  async function getIceServers() {
+    if (cachedIceServers) {
+      return cachedIceServers;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/turn-credentials`);
+
+      if (!response.ok) {
+        throw new Error(`TURN request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      console.log("TURN credentials response:", data);
+
+      /*
+        Cloudflare commonly returns:
+
+        {
+          iceServers: [
+            {
+              urls: [...],
+              username: "...",
+              credential: "..."
+            }
+          ]
+        }
+      */
+
+      cachedIceServers = data.iceServers || data.ice_servers;
+
+      if (!Array.isArray(cachedIceServers)) {
+        throw new Error("TURN response does not contain iceServers");
+      }
+
+      cachedIceServers.push({
+        urls: "stun:stun.l.google.com:19302"
+      });
+
+      return cachedIceServers;
+
+    } catch (error) {
+      console.error("Could not load TURN credentials:", error);
+
+      return [
+        {
+          urls: "stun:stun.l.google.com:19302"
+        }
+      ];
+    }
+  }
+
+  // function createPeerConnection() {
+  //   if (pc) {
+  //     console.log("Peer connection already exists.");
+  //     return pc;
+  //   }
+
+  //   pc = new RTCPeerConnection({
+  //     iceServers: [
+  //       {
+  //         urls: "stun:stun.l.google.com:19302"
+  //       }
+  //     ]
+  //   });
+
+  //   console.log("RTCPeerConnection created.");
+
+  //   pc.ontrack = (event) => {
+  //     console.log("Remote track received:", event.track.kind);
+
+  //     const remoteScreen = document.getElementById("remoteScreen");
+
+  //     if (event.streams && event.streams[0]) {
+  //       remoteScreen.srcObject = event.streams[0];
+  //     } else {
+  //       const remoteStream =
+  //         remoteScreen.srcObject instanceof MediaStream
+  //           ? remoteScreen.srcObject
+  //           : new MediaStream();
+
+  //       remoteStream.addTrack(event.track);
+  //       remoteScreen.srcObject = remoteStream;
+  //     }
+
+  //     remoteScreen.play().catch((error) => {
+  //       console.error("Remote video play failed:", error);
+  //     });
+  //   };
+
+  //   pc.onicecandidate = (event) => {
+  //   if (!event.candidate) {
+  //     console.log("ICE gathering completed.");
+  //     return;
+  //   }
+
+  //   console.log("Local ICE candidate generated:", event.candidate);
+
+  //   if (ws && ws.readyState === WebSocket.OPEN) {
+  //     ws.send(JSON.stringify({
+  //       type: "ice_candidate",
+  //       candidate: event.candidate
+  //     }));
+
+  //     appendLog("→ ICE candidate sent", "out");
+  //   }
+
+  //   // pc.onicecandidate = (event) => {
+  //   //   if (!event.candidate) {
+  //   //     console.log("ICE gathering completed.");
+  //   //     return;
+  //   //   }
+
+  //   //   console.log("Local ICE candidate generated:", event.candidate);
+
+  //     /*
+  //       We are only logging the ICE candidate in this first step.
+  //       Sending it through the WebSocket will be added later.
+  //     */
+  //  };
+
+  //   pc.onconnectionstatechange = () => {
+  //     console.log("Peer connection state:", pc.connectionState);
+  //     appendLog(
+  //       `Peer connection: ${pc.connectionState}`,
+  //       "sys"
+  //     );
+  //   };
+
+  //   pc.oniceconnectionstatechange = () => {
+  //     console.log("ICE connection state:", pc.iceConnectionState);
+  //   };
+
+  //   pc.onicegatheringstatechange = () => {
+  //     console.log("ICE gathering state:", pc.iceGatheringState);
+  //   };
+
+  //   pc.onsignalingstatechange = () => {
+  //     console.log("Signaling state:", pc.signalingState);
+  //   };
+
+  //   return pc;
+  // }
+
+  async function createPeerConnection() {
+    if (pc) {
+      console.log("Peer connection already exists.");
+      return pc;
+    }
+
+    const iceServers = await getIceServers();
+
+    console.log("Creating RTCPeerConnection with:", iceServers);
+
+    pc = new RTCPeerConnection({
+      iceServers,
+      iceCandidatePoolSize: 10
+    });
+
+    pc.ontrack = (event) => {
+      console.log("========== REMOTE TRACK RECEIVED ==========");
+      console.log("Track:", event.track);
+      console.log("Track kind:", event.track.kind);
+      console.log("Streams:", event.streams);
+
+      const remoteVideo = document.getElementById("remoteScreen");
+
+      if (event.streams && event.streams[0]) {
+        remoteVideo.srcObject = event.streams[0];
+      } else {
+        let remoteStream = remoteVideo.srcObject;
+
+        if (!(remoteStream instanceof MediaStream)) {
+          remoteStream = new MediaStream();
+        }
+
+        remoteStream.addTrack(event.track);
+        remoteVideo.srcObject = remoteStream;
+      }
+
+      remoteVideo.muted = false;
+      remoteVideo.autoplay = true;
+      remoteVideo.playsInline = true;
+
+      remoteVideo.play().catch((error) => {
+        console.error("Remote video play failed:", error);
+      });
+    };
+
+    pc.onicecandidate = (event) => {
+      if (!event.candidate) {
+        console.log("ICE gathering completed.");
+        return;
+      }
+
+      console.log(
+        "Local ICE candidate:",
+        event.candidate.candidate
+      );
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "ice_candidate",
+          candidate: event.candidate.toJSON()
+        }));
+
+        appendLog("→ ICE candidate sent", "out");
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      console.log(
+        "Peer connection state:",
+        pc.connectionState
+      );
+
+      appendLog(
+        `Peer connection: ${pc.connectionState}`,
+        "sys"
+      );
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log(
+        "ICE connection state:",
+        pc.iceConnectionState
+      );
+    };
+
+    pc.onicegatheringstatechange = () => {
+      console.log(
+        "ICE gathering state:",
+        pc.iceGatheringState
+      );
+    };
+
+    pc.onsignalingstatechange = () => {
+      console.log(
+        "Signaling state:",
+        pc.signalingState
+      );
+    };
+
+    return pc;
+  }
+
+  async function startCamera() {
+    try {
+      if (localMediaStream) {
+        return localMediaStream;
+      }
+
+      localMediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: {
+              ideal: 30,
+              max: 30
+            },
+            facingMode: "user"
+        },
+        audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+        }
+      });
+
+      const localVideo = document.getElementById("localVideo");
+      localVideo.srcObject = localMediaStream;
+
+      await createPeerConnection();
+
+      localMediaStream.getTracks().forEach((track) => {
+        pc.addTrack(track, localMediaStream);
+      });
+
+      appendLog("Camera and microphone started", "sys");
+      console.log("Local media tracks added.");
+
+      return localMediaStream;
+
+    } catch (error) {
+      console.error("Camera/microphone error:", error);
+      appendLog("Camera or microphone permission failed", "sys");
+      showToast("Allow camera and microphone access.", "error");
+      throw error;
+    }
+  }
+
+  async function createAndSendOffer() {
+    try {
+      await createPeerConnection();
+
+      await startCamera();
+
+      console.log("========== CREATING OFFER ==========");
+      console.log("PC before createOffer:", pc);
+      console.log("Signaling state before offer:", pc.signalingState);
+      console.log("Senders before offer:", pc.getSenders());
+
+      const offer = await pc.createOffer();
+      console.log("Offer created:", offer);
+
+      await pc.setLocalDescription(offer);
+      console.log("Local offer applied.");
+      console.log("pc.localDescription:", pc.localDescription);
+      console.log("Signaling state after local offer:", pc.signalingState);
+
+      console.log("Sending offer through WebSocket...");
+
+      ws.send(JSON.stringify({
+        type: "offer",
+        sdp: pc.localDescription
+      }));
+      console.log("Offer sent through WebSocket.");
+
+      appendLog("→ WebRTC offer sent", "out");
+      console.log("Offer sent:", pc.localDescription);
+
+    } catch (error) {
+      console.error("Failed to create offer:", error);
+      appendLog("Failed to create offer", "sys");
+    }
+  }
+
+  async function handleOfferAndSendAnswer(offerSdp) {
+    try {
+      await createPeerConnection();
+
+      await startCamera();
+
+      await pc.setRemoteDescription(
+        new RTCSessionDescription(offerSdp)
+      );
+
+      console.log("Creating answer...");
+      const answer = await pc.createAnswer();
+      console.log("Answer created:", answer);
+
+      await pc.setLocalDescription(answer);
+      console.log("Local answer applied.");
+      console.log("pc.localDescription:", pc.localDescription);
+      console.log("Signaling state after local answer:", pc.signalingState);
+
+      console.log("Sending answer through WebSocket...");
+
+      ws.send(JSON.stringify({
+        type: "answer",
+        sdp: pc.localDescription
+      }));
+
+      console.log("Answer sent through WebSocket.");
+
+      appendLog("→ WebRTC answer sent", "out");
+      console.log("Answer sent:", pc.localDescription);
+
+    } catch (error) {
+      console.error("Failed to handle offer:", error);
+      appendLog("Failed to handle offer", "sys");
+    }
+  }
+
+  // ── Role mapping ────────────────────────────────────────────────────
+  // DB stores mentor/mentee — WebSocket uses teacher/student
+  const ROLE_LABEL = { mentor: "Mentor", mentee: "Mentee" };
+  const ROLE_ICON  = { mentor: "🎓",    mentee: "📖" };
+  const PEER_LABEL = { mentor: "Mentee", mentee: "Mentor" };
+
+  // ── Helpers ─────────────────────────────────────────────────────────
+
+  function showToast(msg, type = "") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  function showState(id) {
+    [
+      "stateNoProfile",
+      "stateIdle",
+      "statePaired"
+    ].forEach((stateId) => {
+      const element = document.getElementById(stateId);
+
+      if (element) {
+        element.classList.remove("active");
+      }
+    });
+
+    const target = document.getElementById(id);
+
+    if (target) {
+      target.classList.add("active");
+    }
+  }
+
+  function timestamp() {
+    return new Date().toTimeString().slice(0,8);
+  }
+
+  function appendLog(text, type = "sys") {
+    const log  = document.getElementById("signalLog");
+    const line = document.createElement("div");
+    line.className = "log-line";
+    line.innerHTML = `<span class="log-time">${timestamp()}</span><span class="log-${type}">${text}</span>`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function initials(name) {
+    if (!name) return "?";
+    return name.trim().split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
+  }
+
+  // ── Connect ──────────────────────────────────────────────────────────
+
+  async function onJoinedBookedRoom(msg) {
+    showState("statePaired");
+
+    document.getElementById("roomIdLabel").textContent =
+      `room: ${msg.room.slice(0, 12)}…`;
+
+    const myRole = userProfile.role;
+    const peerRole = PEER_LABEL[myRole];
+
+    document.getElementById("peerAvatar").textContent =
+      peerRole === "Mentor" ? "🎓" : "📖";
+
+    document.getElementById("peerName").textContent = `Your ${peerRole}`;
+    document.getElementById("peerRole").textContent = peerRole;
+
+    appendLog(`Joined booked room ${msg.room.slice(0, 12)}`, "sys");
+    showToast("Joined booked session.", "success");
+
+    await createPeerConnection();
+
+    try {
+      await startCamera();
+      console.log("Camera and microphone ready after room join.");
+    } catch (error) {
+      console.error("Failed to start camera after joining room:", error);
+    }
+  }
+
+  window.connect = async function () {
+    try {
+      const idToken = localStorage.getItem("wc_id_token");
+
+      if (!idToken) {
+        showToast("Login token missing. Please login again.", "error");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const res = await fetch(`${BASE_URL}/mentor/bookings/me`, {
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+
+      if (!res.ok) {
+        showToast("Could not load booked session.", "error");
+        return;
+      }
+
+      const data = await res.json();
+      const booking = data.bookings.find(b => b.status === "booked");
+
+      if (!booking) {
+        showToast("No booked session found.", "error");
+        return;
+      }
+
+      currentRoomId = booking.video_room_id;
+
+      ws = new WebSocket(
+        `${WS_URL}/mentor/ws/video/${booking.video_room_id}?token=${encodeURIComponent(idToken)}`
+      );
+
+      ws.onopen = () => {
+        appendLog("WebSocket connected", "sys");
+      };
+
+      ws.onmessage = async (event) => {
+        console.log("========== WEBSOCKET MESSAGE RECEIVED ==========");
+        console.log("Raw WebSocket data:", event.data);
+        let msg;
+        try {
+          msg = JSON.parse(event.data);
+          console.log("Parsed WebSocket message:", msg);
+          console.log("Message type:", msg.type);
+        } catch {
+          appendLog(`← ${event.data}`, "in");
+          return;
+        }
+
+        if (msg.type === "joined") {
+          await onJoinedBookedRoom(msg);
+          return;
+        }
+
+        if (msg.type === "peer_ready") {
+          appendLog("Peer is ready", "sys");
+          console.log("========== PEER READY ==========");
+          console.log("peer_ready payload:", msg);
+          console.log("Should create offer:", msg.should_create_offer);
+
+          await createPeerConnection();
+
+          if (msg.should_create_offer === true) {
+            console.log("This frontend will create the offer.");
+            await createAndSendOffer();
+          }
+
+          return;
+        }
+
+        if (msg.type === "offer") {
+          appendLog("← WebRTC offer received", "in");
+          console.log("========== OFFER RECEIVED ==========");
+          console.log("Offer payload:", msg);
+          console.log("Offer SDP:", msg.sdp);
+          console.log("PC signaling state before handling offer:", pc?.signalingState);
+
+          await handleOfferAndSendAnswer(msg.sdp);
+
+          console.log("Offer handled and answer process completed.");
+
+          return;
+        }
+
+        if (msg.type === "answer") {
+          appendLog("← WebRTC answer received", "in");
+
+          try {
+            if (!pc) {
+              console.error("Cannot apply answer: peer connection does not exist.");
+              return;
+            }
+
+            console.log("========== ANSWER RECEIVED ==========");
+            console.log("Answer SDP:", msg.sdp);
+            console.log("Signaling state before answer:", pc.signalingState);
+
+            await pc.setRemoteDescription(
+              new RTCSessionDescription(msg.sdp)
+            );
+
+            console.log("Remote answer applied.");
+            console.log("Remote description:", pc.remoteDescription);
+            console.log("Signaling state after answer:", pc.signalingState);
+
+          } catch (error) {
+            console.error("Failed to apply remote answer:", error);
+            appendLog("Failed to apply WebRTC answer", "sys");
+          }
+
+          return;
+        }
+
+        if (msg.type === "ice_candidate") {
+          appendLog("← ICE candidate received", "in");
+
+          try {
+            await pc.addIceCandidate(
+              new RTCIceCandidate(msg.candidate)
+            );
+
+            console.log("Remote ICE candidate added:", msg.candidate);
+
+          } catch (error) {
+            console.error("Failed to add ICE candidate:", error);
+          }
+
+          return;
+        }
+
+        appendLog(`← ${event.data}`, "in");
+      };
+
+      ws.onclose = () => {
+        appendLog("WebSocket closed", "sys");
+        showToast("Session disconnected.", "error");
+      };
+
+      ws.onerror = () => {
+        showToast("WebSocket error.", "error");
+      };
+
+    } catch (err) {
+      console.error(err);
+      showToast("Could not start session.", "error");
+    }
+  };
+
+  // ── Send signal message ──────────────────────────────────────────────
+
+  window.sendMsg = function() {
+    const input = document.getElementById("msgInput");
+    const text  = input.value.trim();
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(text);
+    appendLog(`→ ${text}`, "out");
+    input.value = "";
+  };
+
+  window.startScreenShare = async function () {
+
+    console.log("========== START SCREEN SHARE ==========");
+    console.log("Button clicked");
+      try {
+          if (!pc) {
+              showToast("Peer connection is not ready.", "error");
+              return;
+          }
+
+          localScreenStream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: false
+          });
+
+          const screenTrack = localScreenStream.getVideoTracks()[0];
+
+          const videoSender = pc.getSenders().find(
+              sender => sender.track && sender.track.kind === "video"
+          );
+
+          if (!videoSender) {
+              showToast("No video sender found.", "error");
+              screenTrack.stop();
+              return;
+          }
+
+          // Replace camera video with screen video
+          await videoSender.replaceTrack(screenTrack);
+
+          // Show your shared screen locally
+          document.getElementById("localVideo").srcObject = localScreenStream;
+
+          appendLog("Screen sharing started", "sys");
+          showToast("Screen sharing started.", "success");
+
+          // When the browser's Stop sharing button is clicked
+          screenTrack.onended = async () => {
+              await stopScreenShare(videoSender);
+          };
+
+      } catch (error) {
+          console.error("Screen sharing failed:", error);
+          appendLog("Screen sharing failed", "sys");
+          showToast("Screen sharing was cancelled or failed.", "error");
+      }
+  };
+
+  // ── End session ──────────────────────────────────────────────────────
+
+  // window.endSession = function() {
+  //   if (ws) { ws.close(); ws = null; }
+  //   currentRoomId = null;
+  //   showState("stateIdle");
+  //   showToast("Session ended.");
+  // };
+
+  window.endSession = function() {
+    if (localMediaStream) {
+      localMediaStream.getTracks().forEach((track) => track.stop());
+      localMediaStream = null;
+    }
+
+    if (localScreenStream) {
+      localScreenStream.getTracks().forEach((track) => track.stop());
+      localScreenStream = null;
+    }
+
+    if (pc) {
+      pc.close();
+      pc = null;
+    }
+
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+
+    document.getElementById("localVideo").srcObject = null;
+    document.getElementById("remoteScreen").srcObject = null;
+
+    currentRoomId = null;
+    showState("stateIdle");
+    showToast("Session ended.");
+  };
+
+  // ── Auth gate ────────────────────────────────────────────────────────
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    firebaseUser = user;
+
+    // Refresh token in localStorage
+    const idToken = await user.getIdToken();
+    localStorage.setItem("wc_id_token", idToken);
+
+    // Load profile — prefer localStorage, then fetch fresh
+    const cached = localStorage.getItem("wc_user");
+    if (cached) {
+      userProfile = JSON.parse(cached);
+    }
+
+    // Always fetch fresh from server
+    try {
+      const res = await fetch(`${BASE_URL}/profile/me`, {
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+      if (res.ok) {
+        userProfile = await res.json();
+        localStorage.setItem("wc_user", JSON.stringify(userProfile));
+      }
+    } catch { /* use cached if fetch fails */ }
+
+    // Check profile completeness
+    if (!userProfile?.display_name || !userProfile?.role) {
+      // Update chip with what we have
+      document.getElementById("chipName").textContent = user.email;
+      showState("stateNoProfile");
+      return;
+    }
+
+    showState("stateIdle");
+  });
+</script>
+</body>
+</html>
