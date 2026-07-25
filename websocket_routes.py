@@ -35,7 +35,7 @@ async def get_turn_credentials():
     print("STATUS:", response.status_code)
     print("BODY:", response.text)
 
-    if response.status_code != 200:
+    if not response.is_success:
         raise HTTPException(
             status_code=500,
             detail=response.text
