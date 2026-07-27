@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordComet Dashboard</title>
+</head>
+<body>
+
+    <h1>WordComet Dashboard</h1>
+
+    <nav>
+        <button id="profileBtn" type="button">Profile</button>
+        <button id="mentorshipBtn" type="button">Mentorship</button>
+        <button id="friendsBtn" type="button">Friends</button>
+        <button id="sessionBtn" type="button">Session</button>
+        <button id="refreshBtn" type="button">Refresh Dashboard</button>
+        <button id="logoutBtn" type="button">Sign Out</button>
+    </nav>
+
+    <hr>
+
+    <div id="loadingMessage">Loading dashboard...</div>
+    <div id="errorMessage"></div>
+
+    <main id="dashboardContent" hidden>
+
+        <section>
+            <h2>Profile</h2>
+            <p>Name: <span id="displayName">-</span></p>
+            <p>Email: <span id="email">-</span></p>
+            <p>Role: <span id="role">-</span></p>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>Current Mentorship Session</h2>
+
+            <div id="noActiveBooking">
+                <p>No mentorship session is active right now.</p>
+                <button id="openBookingBtn" type="button">Open Mentorship</button>
+            </div>
+
+            <div id="activeBooking" hidden>
+                <p>Booking ID: <span id="bookingId">-</span></p>
+                <p>Status: <span id="bookingStatus">-</span></p>
+                <p>Date: <span id="bookingDate">-</span></p>
+                <p>Start: <span id="bookingStart">-</span></p>
+                <p>End: <span id="bookingEnd">-</span></p>
+                <p>Other participant: <span id="participantName">-</span></p>
+                <p id="participantPictureRow">
+                    Profile picture:
+                    <img id="participantPicture" alt="Participant profile" width="80" height="80">
+                </p>
+
+                <div id="mentorBookingDetails" hidden>
+                    <h3>Student Details</h3>
+                    <p>Full name: <span id="studentFullName">-</span></p>
+                    <p>Email: <span id="studentEmail">-</span></p>
+                    <p>Qualification: <span id="studentQualification">-</span></p>
+                    <p>Resume uploaded: <span id="studentResumeStatus">-</span></p>
+                    <p>Resume filename: <span id="studentResumeFilename">-</span></p>
+                </div>
+
+                <div id="menteeBookingDetails" hidden>
+                    <h3>Mentor Details</h3>
+                    <p>Full name: <span id="mentorFullName">-</span></p>
+                    <p>Email: <span id="mentorEmail">-</span></p>
+                    <p>Bio: <span id="mentorBio">-</span></p>
+                    <p>Average rating: <span id="mentorRating">-</span></p>
+                    <p>Rating count: <span id="mentorRatingCount">-</span></p>
+                    <p>Resume uploaded: <span id="menteeResumeStatus">-</span></p>
+                    <p>Resume filename: <span id="menteeResumeFilename">-</span></p>
+                </div>
+
+                <button id="joinSessionBtn" type="button">Join Session</button>
+                <button id="cancelBookingBtn" type="button">Cancel Booking</button>
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="mentorAvailabilitySection" hidden>
+            <h2>My Availability</h2>
+
+            <p>Total availability entries: <span id="totalAvailability">0</span></p>
+            <p>Active availability entries: <span id="activeAvailabilityCount">0</span></p>
+
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="availabilityTableBody"></tbody>
+            </table>
+        </section>
+
+        <section id="menteeActionsSection" hidden>
+            <h2>Mentee Actions</h2>
+            <p>You can open the mentorship page to select a mentor, load slots, and create a booking.</p>
+            <button id="bookMentorBtn" type="button">Book a Mentor</button>
+        </section>
+
+    </main>
+
+<script type="module">
+    import {
+        initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+    import {
+        getAuth,
+        onAuthStateChanged,
+        signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDD0z45h-E_FZTkbjpwm3TJMqNTbSub0B0",
+        authDomain: "wordcomet.firebaseapp.com",
+        projectId: "wordcomet",
+        storageBucket: "wordcomet.firebasestorage.app",
+        messagingSenderId: "218267654833",
+        appId: "1:218267654833:web:1216a59da0632a89d7a090",
+        measurementId: "G-NHRYJRJZ0G"
+    };
+
+    const BASE_URL = "https://wordcomet.shyapsneon.tech";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    let firebaseUser = null;
+    let idToken = null;
+    let profileData = null;
+    let activeBookingData = null;
+
+    const loadingMessage = document.getElementById("loadingMessage");
+    const errorMessage = document.getElementById("errorMessage");
+    const dashboardContent = document.getElementById("dashboardContent");
+
+    function setError(message) {
+        errorMessage.textContent = message || "";
+    }
+
+    function formatTime(value) {
+        if (!value) return "-";
+        return String(value).slice(0, 5);
+    }
+
+    async function api(path, options = {}) {
+        if (!idToken) {
+            throw new Error("Authentication token is missing.");
+        }
+
+        const response = await fetch(`${BASE_URL}${path}`, {
+            ...options,
+            headers: {
+                "Authorization": `Bearer ${idToken}`,
+                ...(options.body ? { "Content-Type": "application/json" } : {}),
+                ...(options.headers || {})
+            }
+        });
+
+        let data = null;
+
+        try {
+            data = await response.json();
+        } catch {
+            data = null;
+        }
+
+        if (!response.ok) {
+            const error = new Error(
+                data?.detail ||
+                data?.message ||
+                `Request failed with status ${response.status}`
+            );
+            error.status = response.status;
+            error.data = data;
+            throw error;
+        }
+
+        return data;
+    }
+
+    async function loadProfile() {
+        profileData = await api("/profile/me");
+
+        localStorage.setItem("wc_user", JSON.stringify(profileData));
+        localStorage.setItem("wc_id_token", idToken);
+        localStorage.setItem("wc_firebase_uid", firebaseUser.uid);
+
+        document.getElementById("displayName").textContent =
+            profileData.display_name || profileData.full_name || "-";
+
+        document.getElementById("email").textContent =
+            profileData.email || firebaseUser.email || "-";
+
+        document.getElementById("role").textContent =
+            profileData.role || "-";
+    }
+
+    function clearActiveBooking() {
+        activeBookingData = null;
+
+        document.getElementById("activeBooking").hidden = true;
+        document.getElementById("noActiveBooking").hidden = false;
+        document.getElementById("mentorBookingDetails").hidden = true;
+        document.getElementById("menteeBookingDetails").hidden = true;
+    }
+
+    function showActiveBooking(booking) {
+        activeBookingData = booking;
+
+        document.getElementById("noActiveBooking").hidden = true;
+        document.getElementById("activeBooking").hidden = false;
+
+        document.getElementById("bookingId").textContent = booking.id ?? "-";
+        document.getElementById("bookingStatus").textContent = booking.status || "-";
+        document.getElementById("bookingDate").textContent = booking.session_date || "-";
+        document.getElementById("bookingStart").textContent = formatTime(booking.start_time);
+        document.getElementById("bookingEnd").textContent = formatTime(booking.end_time);
+
+        const isMentor = profileData.role === "mentor";
+
+        const participantName = isMentor
+            ? booking.mentee_name
+            : booking.mentor_name;
+
+        const participantPicture = isMentor
+            ? booking.mentee_picture
+            : booking.mentor_picture;
+
+        document.getElementById("participantName").textContent =
+            participantName || "-";
+
+        const pictureElement = document.getElementById("participantPicture");
+        const pictureRow = document.getElementById("participantPictureRow");
+
+        if (participantPicture) {
+            pictureElement.src = participantPicture;
+            pictureRow.hidden = false;
+        } else {
+            pictureElement.removeAttribute("src");
+            pictureRow.hidden = true;
+        }
+    }
+
+    async function loadBookingDetails(bookingId) {
+        if (profileData.role === "mentor") {
+            const data = await api(
+                `/mentor/bookings/${bookingId}/student-details`
+            );
+
+            document.getElementById("mentorBookingDetails").hidden = false;
+            document.getElementById("menteeBookingDetails").hidden = true;
+
+            document.getElementById("studentFullName").textContent =
+                data.student?.full_name ||
+                data.student?.display_name ||
+                "-";
+
+            document.getElementById("studentEmail").textContent =
+                data.student?.email || "-";
+
+            document.getElementById("studentQualification").textContent =
+                data.student?.qualification || "-";
+
+            document.getElementById("studentResumeStatus").textContent =
+                data.resume?.is_uploaded ? "Yes" : "No";
+
+            document.getElementById("studentResumeFilename").textContent =
+                data.resume?.filename || "-";
+        }
+
+        if (profileData.role === "mentee") {
+            const data = await api(
+                `/mentor/bookings/${bookingId}/mentor-details`
+            );
+
+            document.getElementById("menteeBookingDetails").hidden = false;
+            document.getElementById("mentorBookingDetails").hidden = true;
+
+            document.getElementById("mentorFullName").textContent =
+                data.mentor?.full_name ||
+                data.mentor?.display_name ||
+                "-";
+
+            document.getElementById("mentorEmail").textContent =
+                data.mentor?.email || "-";
+
+            document.getElementById("mentorBio").textContent =
+                data.mentor?.bio || "-";
+
+            document.getElementById("mentorRating").textContent =
+                data.mentor?.average_rating ?? "-";
+
+            document.getElementById("mentorRatingCount").textContent =
+                data.mentor?.rating_count ?? "0";
+
+            document.getElementById("menteeResumeStatus").textContent =
+                data.resume?.is_uploaded ? "Yes" : "No";
+
+            document.getElementById("menteeResumeFilename").textContent =
+                data.resume?.filename || "-";
+        }
+    }
+
+    async function loadCurrentBooking() {
+        clearActiveBooking();
+
+        try {
+            const data = await api("/mentor/bookings/me");
+
+            if (!Array.isArray(data.bookings) || data.bookings.length === 0) {
+                return;
+            }
+
+            const booking = data.bookings[0];
+
+            showActiveBooking(booking);
+            await loadBookingDetails(booking.id);
+
+        } catch (error) {
+            if (error.status === 404) {
+                clearActiveBooking();
+                return;
+            }
+
+            throw error;
+        }
+    }
+
+    async function loadMentorAvailability() {
+        const section = document.getElementById("mentorAvailabilitySection");
+        const tbody = document.getElementById("availabilityTableBody");
+
+        if (profileData.role !== "mentor") {
+            section.hidden = true;
+            return;
+        }
+
+        section.hidden = false;
+        tbody.innerHTML = "";
+
+        const data = await api("/mentor/availability/me");
+        const availability = Array.isArray(data.availability)
+            ? data.availability
+            : [];
+
+        document.getElementById("totalAvailability").textContent =
+            availability.length;
+
+        document.getElementById("activeAvailabilityCount").textContent =
+            availability.filter(item => item.is_active).length;
+
+        if (availability.length === 0) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+
+            cell.colSpan = 6;
+            cell.textContent = "No availability has been created.";
+
+            row.appendChild(cell);
+            tbody.appendChild(row);
+            return;
+        }
+
+        availability.forEach(item => {
+            const row = document.createElement("tr");
+
+            const values = [
+                item.id ?? "-",
+                item.availability_date || "-",
+                formatTime(item.start_time),
+                formatTime(item.end_time),
+                item.slot_duration_minutes ?? "-",
+                item.is_active ? "Active" : "Inactive"
+            ];
+
+            values.forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value;
+                row.appendChild(cell);
+            });
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function showRoleSections() {
+        document.getElementById("mentorAvailabilitySection").hidden =
+            profileData.role !== "mentor";
+
+        document.getElementById("menteeActionsSection").hidden =
+            profileData.role !== "mentee";
+    }
+
+    async function loadDashboard() {
+        loadingMessage.hidden = false;
+        dashboardContent.hidden = true;
+        setError("");
+
+        try {
+            await loadProfile();
+            showRoleSections();
+
+            await Promise.all([
+                loadCurrentBooking(),
+                loadMentorAvailability()
+            ]);
+
+            dashboardContent.hidden = false;
+
+        } catch (error) {
+            setError(error.message || "Could not load dashboard.");
+        } finally {
+            loadingMessage.hidden = true;
+        }
+    }
+
+    async function cancelActiveBooking() {
+        if (!activeBookingData?.id) {
+            return;
+        }
+
+        const confirmed = window.confirm(
+            "Are you sure you want to cancel this booking?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        setError("");
+
+        try {
+            await api(
+                `/mentor/bookings/${activeBookingData.id}/cancel`,
+                { method: "PATCH" }
+            );
+
+            clearActiveBooking();
+            window.alert("Booking cancelled.");
+
+        } catch (error) {
+            setError(error.message || "Could not cancel booking.");
+        }
+    }
+
+    function joinActiveSession() {
+        if (!activeBookingData?.video_room_id) {
+            setError("The booking does not contain a video room ID.");
+            return;
+        }
+
+        localStorage.setItem(
+            "wc_video_room_id",
+            activeBookingData.video_room_id
+        );
+
+        localStorage.setItem(
+            "wc_active_booking",
+            JSON.stringify(activeBookingData)
+        );
+
+        window.location.href = "session.html";
+    }
+
+    document.getElementById("profileBtn").addEventListener("click", () => {
+        window.location.href = "settings.html";
+    });
+
+    document.getElementById("mentorshipBtn").addEventListener("click", () => {
+        window.location.href = "booking.html";
+    });
+
+    document.getElementById("friendsBtn").addEventListener("click", () => {
+        window.location.href = "friends.html";
+    });
+
+    document.getElementById("sessionBtn").addEventListener("click", () => {
+        window.location.href = "session.html";
+    });
+
+    document.getElementById("openBookingBtn").addEventListener("click", () => {
+        window.location.href = "booking.html";
+    });
+
+    document.getElementById("bookMentorBtn").addEventListener("click", () => {
+        window.location.href = "booking.html";
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+        loadDashboard();
+    });
+
+    document.getElementById("joinSessionBtn").addEventListener(
+        "click",
+        joinActiveSession
+    );
+
+    document.getElementById("cancelBookingBtn").addEventListener(
+        "click",
+        cancelActiveBooking
+    );
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+        try {
+            await signOut(auth);
+        } finally {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+    });
+
+    onAuthStateChanged(auth, async user => {
+        if (!user) {
+            localStorage.clear();
+            window.location.href = "login.html";
+            return;
+        }
+
+        firebaseUser = user;
+        idToken = await user.getIdToken();
+
+        await loadDashboard();
+    });
+</script>
+
+</body>
+</html>

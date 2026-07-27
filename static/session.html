@@ -2,35 +2,270 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Simple Video Call Test</title>
+    <title>Mock Interview Session</title>
+    <link rel="stylesheet" href="css/session.css">
 </head>
 <body>
 
-<h2>Video Call Test</h2>
+<div id="app">
 
-<h3>Local Video</h3>
-<video id="localVideo" autoplay playsinline muted width="400"></video>
+    <main class="video-call-page">
 
-<h3>Remote Video</h3>
-<video id="remoteVideo" autoplay playsinline width="400"></video>
+        <div class="video-call-logo">
 
-<script>
+            <nav class="top-nav">
 
-const ROOM_ID = "mentor-3-mentee-7-test-room";
+                <div class="nav-brand">
+                    <span class="nav-brand-icon">☄️</span>
+
+                    <span class="nav-brand-text">
+                        Word<span>Comet</span>
+                    </span>
+                </div>
+
+                <div class="nav-links">
+
+                    <a href="booking.html" class="nav-link">
+                        Bookings
+                    </a>
+
+                    <a href="dashboard.html" class="nav-link">
+                        Dashboard
+                    </a>
+
+                    <a href="friends.html" class="nav-link">
+                        Friends
+                    </a>
+
+                    <a href="settings.html" class="nav-link">
+                        Settings
+                    </a>
+
+                    <button
+                        id="logoutBtn"
+                        class="nav-link nav-logout"
+                        type="button">
+                        Logout
+                    </button>
+
+                </div>
+
+            </nav>
+        </div>
+
+        <section class="video-call-header">
+
+            <h1>Mock Interview</h1>
+
+            <p>
+                Join your scheduled interview when both participants are ready.
+            </p>
+
+            <button id="joinBtn" class="join-call-btn">
+                Join Video Call
+            </button>
+
+        </section>
+
+        <section class="interview-stage">
+
+            <div class="main-video-panel">
+
+                <div class="video-panel-header">
+                    <h2>Interview Partner</h2>
+                </div>
+
+                <div class="main-video-frame">
+                    <video
+                        id="remoteVideo"
+                        autoplay
+                        playsinline>
+                    </video>
+
+                    <div class="self-preview">
+
+                        <div class="self-preview-label">
+                            Your Camera
+                        </div>
+
+                        <video
+                            id="localVideo"
+                            autoplay
+                            playsinline
+                            muted>
+                        </video>
+
+                    </div>
+
+                    <div class="call-controls">
+
+                        <button
+                            id="muteBtn"
+                            class="control-btn"
+                            type="button"
+                            disabled>
+                            <span class="control-icon">🎤</span>
+                            <span id="muteLabel">Mute</span>
+                        </button>
+
+                        <button
+                            id="cameraBtn"
+                            class="control-btn"
+                            type="button"
+                            disabled>
+                            <span class="control-icon">📷</span>
+                            <span id="cameraLabel">Camera</span>
+                        </button>
+
+                        <button
+                            id="screenShareBtn"
+                            class="control-btn"
+                            type="button"
+                            disabled>
+                            <span class="control-icon">🖥️</span>
+                            <span id="screenShareLabel">Share</span>
+                        </button>
+
+                        <button
+                            id="fullscreenBtn"
+                            class="control-btn"
+                            type="button">
+                            <span class="control-icon">⛶</span>
+                            <span id="fullscreenLabel">Full Screen</span>
+                        </button>
+
+                        <button
+                            id="endCallBtn"
+                            class="control-btn control-btn-danger"
+                            type="button"
+                            disabled>
+                            <span class="control-icon">📞</span>
+                            <span>End</span>
+                        </button>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+    getAuth,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDD0z45h-E_FZTkbjpwm3TJMqNTbSub0B0",
+    authDomain: "wordcomet.firebaseapp.com",
+    projectId: "wordcomet",
+    storageBucket: "wordcomet.firebasestorage.app",
+    messagingSenderId: "218267654833",
+    appId: "1:218267654833:web:1216a59da0632a89d7a090",
+    measurementId: "G-NHRYJRJZ0G"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// const ROOM_ID = "mentor-3-mentee-7-test-room";
 
 // Change these for production
 const API_BASE = "https://wordcomet.shyapsneon.tech";
-const WS_URL = `wss://wordcomet.shyapsneon.tech/ws/chat/${ROOM_ID}`;
+// const WS_URL = `wss://wordcomet.shyapsneon.tech/ws/chat/${ROOM_ID}`;
+
+let ROOM_ID = null;
+let WS_URL = null;
 
 let websocket;
 let peerConnection;
 let localStream;
 
-const localVideo = document.getElementById("localVideo");
-const remoteVideo = document.getElementById("remoteVideo");
-const ID_TOKEN = localStorage.getItem("wc_id_token");
+let localVideo = document.getElementById("localVideo");
+let remoteVideo = document.getElementById("remoteVideo");
+
+const muteBtn = document.getElementById("muteBtn");
+const cameraBtn = document.getElementById("cameraBtn");
+const screenShareBtn = document.getElementById("screenShareBtn");
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+const endCallBtn = document.getElementById("endCallBtn");
+
+const muteLabel = document.getElementById("muteLabel");
+const cameraLabel = document.getElementById("cameraLabel");
+const screenShareLabel = document.getElementById("screenShareLabel");
+const fullscreenLabel = document.getElementById("fullscreenLabel");
+
+let screenStream = null;
+let isScreenSharing = false;
 
 async function start() {
+
+    const idToken = localStorage.getItem("wc_id_token");
+
+    const bookingResponse = await fetch(`${API_BASE}/mentor/bookings/me`, {
+        headers: {
+            Authorization: `Bearer ${idToken}`
+        }
+    });
+
+    if (bookingResponse.status === 404) {
+        document.getElementById("app").innerHTML = `
+            <main class="no-booking-page">
+
+                <div class="no-booking-logo">
+                    <div class="no-booking-logo-icon">☄️</div>
+
+                    <div class="no-booking-logo-text">
+                        Word<span>Comet</span>
+                    </div>
+                </div>
+
+                <section class="no-booking-card">
+
+                    <div class="no-booking-icon">📅</div>
+
+                    <h1>No Active Booking</h1>
+
+                    <p class="no-booking-message">
+                        You don't have any active mentor session right now.
+                        Please return during your scheduled session.
+                    </p>
+
+                    <button id="retryBtn" class="join-call-btn">
+                        Join Video Call Again
+                    </button>
+
+                </section>
+
+            </main>
+        `;
+
+        document
+            .getElementById("retryBtn")
+            .addEventListener("click", start);
+
+        return;
+    }
+
+    if (!bookingResponse.ok) {
+        throw new Error("Failed to load booking.");
+    }
+
+    const bookingData = await bookingResponse.json();
+
+    ROOM_ID = bookingData.bookings[0].video_room_id;
+
+    WS_URL = `wss://wordcomet.shyapsneon.tech/ws/chat/${ROOM_ID}`;
+
+    console.log("Room ID:", ROOM_ID);
 
     console.log("Fetching TURN credentials...");
 
@@ -68,6 +303,10 @@ async function start() {
     });
 
     localVideo.srcObject = localStream;
+    muteBtn.disabled = false;
+    cameraBtn.disabled = false;
+    screenShareBtn.disabled = false;
+    endCallBtn.disabled = false;
 
     localStream.getTracks().forEach(track => {
 
@@ -187,7 +426,216 @@ function connectWebSocket() {
 
 }
 
-start();
+muteBtn.addEventListener("click", () => {
+    if (!localStream) {
+        return;
+    }
+
+    const audioTrack = localStream.getAudioTracks()[0];
+
+    if (!audioTrack) {
+        return;
+    }
+
+    audioTrack.enabled = !audioTrack.enabled;
+
+    muteLabel.textContent = audioTrack.enabled ? "Mute" : "Unmute";
+    muteBtn.classList.toggle("control-btn-off", !audioTrack.enabled);
+});
+
+cameraBtn.addEventListener("click", () => {
+    if (!localStream) {
+        return;
+    }
+
+    const videoTrack = localStream.getVideoTracks()[0];
+
+    if (!videoTrack) {
+        return;
+    }
+
+    videoTrack.enabled = !videoTrack.enabled;
+
+    cameraLabel.textContent = videoTrack.enabled
+        ? "Camera"
+        : "Camera Off";
+
+    cameraBtn.classList.toggle(
+        "control-btn-off",
+        !videoTrack.enabled
+    );
+});
+
+fullscreenBtn.addEventListener("click", async () => {
+    const videoStage = document.querySelector(".main-video-frame");
+
+    try {
+        if (!document.fullscreenElement) {
+            await videoStage.requestFullscreen();
+        } else {
+            await document.exitFullscreen();
+        }
+    } catch (error) {
+        console.error("Fullscreen failed:", error);
+    }
+});
+
+document.addEventListener("fullscreenchange", () => {
+    fullscreenLabel.textContent = document.fullscreenElement
+        ? "Exit Full"
+        : "Full Screen";
+});
+
+screenShareBtn.addEventListener("click", async () => {
+    if (!peerConnection || !localStream) {
+        return;
+    }
+
+    if (isScreenSharing) {
+        await stopScreenSharing();
+        return;
+    }
+
+    try {
+        screenStream =
+            await navigator.mediaDevices.getDisplayMedia({
+                video: true,
+                audio: false
+            });
+
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        const sender = peerConnection
+            .getSenders()
+            .find(currentSender =>
+                currentSender.track &&
+                currentSender.track.kind === "video"
+            );
+
+        if (!sender) {
+            throw new Error("Video sender was not found.");
+        }
+
+        await sender.replaceTrack(screenTrack);
+
+        localVideo.srcObject = screenStream;
+
+        isScreenSharing = true;
+        screenShareLabel.textContent = "Stop Share";
+        screenShareBtn.classList.add("control-btn-off");
+
+        screenTrack.addEventListener("ended", () => {
+            stopScreenSharing();
+        });
+
+    } catch (error) {
+        console.error("Screen sharing failed:", error);
+    }
+});
+
+async function stopScreenSharing() {
+    if (!isScreenSharing || !localStream) {
+        return;
+    }
+
+    const cameraTrack = localStream.getVideoTracks()[0];
+
+    const sender = peerConnection
+        .getSenders()
+        .find(currentSender =>
+            currentSender.track &&
+            currentSender.track.kind === "video"
+        );
+
+    if (sender && cameraTrack) {
+        await sender.replaceTrack(cameraTrack);
+    }
+
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
+    }
+
+    localVideo.srcObject = localStream;
+
+    isScreenSharing = false;
+    screenShareLabel.textContent = "Share";
+    screenShareBtn.classList.remove("control-btn-off");
+}
+
+endCallBtn.addEventListener("click", () => {
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
+    }
+
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+
+    if (websocket) {
+        websocket.close();
+        websocket = null;
+    }
+
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+
+    muteBtn.disabled = true;
+    cameraBtn.disabled = true;
+    screenShareBtn.disabled = true;
+    endCallBtn.disabled = true;
+
+    muteLabel.textContent = "Mute";
+    cameraLabel.textContent = "Camera";
+    screenShareLabel.textContent = "Share";
+
+    muteBtn.classList.remove("control-btn-off");
+    cameraBtn.classList.remove("control-btn-off");
+    screenShareBtn.classList.remove("control-btn-off");
+});
+
+// start();
+document.getElementById("joinBtn").addEventListener("click", start);
+
+document
+    .getElementById("logoutBtn")
+    .addEventListener("click", async () => {
+
+        if (localStream) {
+            localStream
+                .getTracks()
+                .forEach(track => track.stop());
+        }
+
+        if (screenStream) {
+            screenStream
+                .getTracks()
+                .forEach(track => track.stop());
+        }
+
+        if (peerConnection) {
+            peerConnection.close();
+        }
+
+        if (websocket) {
+            websocket.close();
+        }
+
+        localStorage.removeItem("wc_id_token");
+        localStorage.removeItem("wc_user");
+        localStorage.removeItem("wc_firebase_uid");
+
+        await auth.signOut();
+
+        window.location.href = "login.html";
+    });
 
 </script>
 

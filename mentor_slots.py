@@ -890,3 +890,181 @@ def mentee_get_mentor_booking_details(
 
     finally:
         conn.close()
+
+@router.get("/bookings/all")
+def get_all_my_bookings(
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Return all bookings belonging to the logged-in mentor or mentee.
+
+    Categories:
+    - active
+    - upcoming
+    - past
+    - cancelled
+    """
+
+    db_user = get_db_user_by_firebase_uid(current_user["uid"])
+
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        if db_user["role"] == "mentor":
+            cur.execute(
+                """
+                SELECT
+                    b.*,
+
+                    u.id AS participant_id,
+                    u.display_name AS participant_name,
+                    u.full_name AS participant_full_name,
+                    u.email AS participant_email,
+                    u.profile_picture_url AS participant_picture,
+                    u.qualification AS participant_qualification
+
+                FROM mentor_bookings b
+
+                JOIN users u
+                    ON u.id = b.mentee_id
+
+                WHERE b.mentor_id = %s
+
+                ORDER BY
+                    b.session_date DESC,
+                    b.start_time DESC
+                """,
+                (db_user["id"],),
+            )
+
+        else:
+            cur.execute(
+                """
+                SELECT
+                    b.*,
+
+                    u.id AS participant_id,
+                    u.display_name AS participant_name,
+                    u.full_name AS participant_full_name,
+                    u.email AS participant_email,
+                    u.profile_picture_url AS participant_picture,
+                    u.bio AS participant_bio,
+                    u.average_rating AS participant_average_rating,
+                    u.rating_count AS participant_rating_count
+
+                FROM mentor_bookings b
+
+                JOIN users u
+                    ON u.id = b.mentor_id
+
+                WHERE b.mentee_id = %s
+
+                ORDER BY
+                    b.session_date DESC,
+                    b.start_time DESC
+                """,
+                (db_user["id"],),
+            )
+
+        rows = cur.fetchall()
+
+        now = datetime.utcnow()
+
+        active_bookings = []
+        upcoming_bookings = []
+        past_bookings = []
+        cancelled_bookings = []
+
+        for row in rows:
+            booking = dict(row)
+
+            session_start = datetime.combine(
+                booking["session_date"],
+                booking["start_time"],
+            )
+
+            session_end = datetime.combine(
+                booking["session_date"],
+                booking["end_time"],
+            )
+
+            if booking["status"] == "cancelled":
+                booking["dashboard_status"] = "cancelled"
+                cancelled_bookings.append(booking)
+
+            elif booking["status"] == "booked" and session_start <= now <= session_end:
+                booking["dashboard_status"] = "active"
+                active_bookings.append(booking)
+
+            elif booking["status"] == "booked" and session_start > now:
+                booking["dashboard_status"] = "upcoming"
+                upcoming_bookings.append(booking)
+
+            elif booking["status"] == "booked" and session_end < now:
+                booking["dashboard_status"] = "past"
+                past_bookings.append(booking)
+
+            else:
+                booking["dashboard_status"] = booking["status"]
+                past_bookings.append(booking)
+
+        # Upcoming bookings should appear nearest-first.
+        upcoming_bookings.sort(
+            key=lambda booking: (
+                booking["session_date"],
+                booking["start_time"],
+            )
+        )
+
+        # Most recent past and cancelled bookings first.
+        past_bookings.sort(
+            key=lambda booking: (
+                booking["session_date"],
+                booking["start_time"],
+            ),
+            reverse=True,
+        )
+
+        cancelled_bookings.sort(
+            key=lambda booking: (
+                booking["session_date"],
+                booking["start_time"],
+            ),
+            reverse=True,
+        )
+
+        return {
+            "role": db_user["role"],
+
+            "summary": {
+                "total": len(rows),
+                "active": len(active_bookings),
+                "upcoming": len(upcoming_bookings),
+                "past": len(past_bookings),
+                "cancelled": len(cancelled_bookings),
+            },
+
+            "next_booking": (
+                upcoming_bookings[0]
+                if upcoming_bookings
+                else None
+            ),
+
+            "bookings": {
+                "active": active_bookings,
+                "upcoming": upcoming_bookings,
+                "past": past_bookings,
+                "cancelled": cancelled_bookings,
+            },
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not load bookings: {str(e)}",
+        )
+
+    finally:
+        conn.close()
