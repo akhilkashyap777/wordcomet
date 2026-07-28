@@ -305,7 +305,7 @@ def get_my_profile(current_user: dict = Depends(get_current_user)):
         user.pop("fcm_token", None)
         user.pop("device_id", None)
 
-        if user["role"] == "mentor":
+        if user["role"] == "mentee":
             user.pop("bio", None)
             user.pop("designation", None)
             user.pop("experience_years", None)
@@ -314,7 +314,7 @@ def get_my_profile(current_user: dict = Depends(get_current_user)):
             user.pop("mentor_resume_filename", None)
             user.pop("mentor_resume_uploaded_at", None)
 
-        if user["role"] == "mentee":
+        if user["role"] == "mentor":
             user.pop("learning_goal", None)
 
         return user
