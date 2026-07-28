@@ -26,7 +26,8 @@ from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisco
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from firebase_admin import auth as fb_auth
-
+from typing import Optional
+from fastapi import HTTPException, Query
 import boto3
 from fastapi import UploadFile, File
 
@@ -1065,6 +1066,87 @@ def get_all_my_bookings(
             status_code=500,
             detail=f"Could not load bookings: {str(e)}",
         )
+
+    finally:
+        conn.close()
+
+@router.get("/bydomain")
+def get_mentors_by_domain(
+    domain: str = Query(...),
+    designation: Optional[str] = Query(None),
+):
+    designations = {
+        "Software Development": [
+            "Flutter Developer",
+            "Android Developer",
+            "iOS Developer",
+            "Frontend Developer",
+            "Backend Developer",
+            "Full Stack Developer",
+        ],
+        "Data Science and AI": [
+            "Machine Learning Engineer",
+            "Data Scientist",
+            "AI Engineer",
+            "Data Analyst",
+        ],
+    }
+
+    domain_designations = designations.get(domain)
+
+    if not domain_designations:
+        raise HTTPException(
+            status_code=404,
+            detail="Domain not found.",
+        )
+
+    if designation:
+        if designation not in domain_designations:
+            raise HTTPException(
+                status_code=400,
+                detail=f"'{designation}' does not belong to '{domain}'.",
+            )
+
+        selected_designations = [designation]
+    else:
+        selected_designations = domain_designations
+
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT
+                id,
+                firebase_uid,
+                display_name,
+                full_name,
+                profile_picture_url,
+                bio,
+                designation,
+                experience_years,
+                experience_months,
+                average_rating,
+                rating_count
+            FROM users
+            WHERE role = 'mentor'
+              AND designation = ANY(%s)
+            ORDER BY average_rating DESC, rating_count DESC, id ASC;
+            """,
+            (selected_designations,),
+        )
+
+        mentors = [dict(row) for row in cur.fetchall()]
+
+        return {
+            "status": "ok",
+            "domain": domain,
+            "designation": designation,
+            "mentor_count": len(mentors),
+            "mentors": mentors,
+        }
 
     finally:
         conn.close()
