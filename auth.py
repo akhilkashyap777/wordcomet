@@ -305,6 +305,18 @@ def get_my_profile(current_user: dict = Depends(get_current_user)):
         user.pop("fcm_token", None)
         user.pop("device_id", None)
 
+        if user["role"] == "mentor":
+            user.pop("bio", None)
+            user.pop("designation", None)
+            user.pop("experience_years", None)
+            user.pop("experience_months", None)
+            user.pop("mentor_resume_key", None)
+            user.pop("mentor_resume_filename", None)
+            user.pop("mentor_resume_uploaded_at", None)
+
+        if user["role"] == "mentee":
+            user.pop("learning_goal", None)
+
         return user
 
     finally:
@@ -592,24 +604,47 @@ def list_mentors(current_user: dict = Depends(get_current_user)):
         conn.close()
 
 @router.put("/profile/update")
-def replace_my_profile(
-    body: UpdateProfileBody,
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    Full profile update using PUT.
-    Replaces all provided profile fields.
-    """
+def update_my_profile(
+    display_name: Optional[str] = Form(None),
+    full_name: Optional[str] = Form(None),
+    profile_picture_url: Optional[str] = Form(None),
+    preferred_language: Optional[str] = Form(None),
+    timezone_name: Optional[str] = Form(None, alias="timezone"),
+    notification_time: Optional[str] = Form(None),
+    notifications_enabled: Optional[bool] = Form(None),
+    age: Optional[int] = Form(None),
+    gender: Optional[str] = Form(None),
+    qualification: Optional[str] = Form(None),
+    course: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
 
+    # Mentor-only fields
+    bio: Optional[str] = Form(None),
+    designation: Optional[str] = Form(None),
+    experience_years: Optional[int] = Form(None),
+    experience_months: Optional[int] = Form(None),
+    resume: Optional[UploadFile] = File(None),
+
+    # Mentee-only field
+    learning_goal: Optional[str] = Form(None),
+
+    current_user: dict = Depends(get_current_user),
+):
     firebase_uid = current_user["uid"]
 
     conn = get_db()
+
     try:
         cur = conn.cursor()
 
         cur.execute(
-            "SELECT role FROM users WHERE firebase_uid = %s",
-            (firebase_uid,)
+            """
+            SELECT id, role
+            FROM users
+            WHERE firebase_uid = %s
+              AND is_active = TRUE
+            """,
+            (firebase_uid,),
         )
 
         db_user = cur.fetchone()
@@ -618,31 +653,174 @@ def replace_my_profile(
             raise HTTPException(status_code=404, detail="User not found.")
 
         role = db_user["role"]
+        fields = {}
 
-        update_data = {
-            "display_name": body.display_name,
-            "full_name": body.full_name,
-            "profile_picture_url": body.profile_picture_url,
-            "preferred_language": body.preferred_language,
-            "timezone": body.timezone,
-            "notification_time": body.notification_time,
-            "notifications_enabled": body.notifications_enabled,
-            "age": body.age,
-            "gender": body.gender,
-            "qualification": body.qualification,
-            "course": body.course,
-            "phone_number": body.phone_number,
-        }
+        # Common fields
+        if display_name is not None:
+            display_name = display_name.strip()
 
+            if not display_name:
+                raise HTTPException(
+                    status_code=400,
+                    detail="display_name cannot be empty.",
+                )
+
+            fields["display_name"] = display_name
+
+        if full_name is not None:
+            fields["full_name"] = full_name.strip()
+
+        if profile_picture_url is not None:
+            fields["profile_picture_url"] = profile_picture_url
+
+        if preferred_language is not None:
+            fields["preferred_language"] = preferred_language
+
+        if timezone_name is not None:
+            fields["timezone"] = timezone_name
+
+        if notification_time is not None:
+            fields["notification_time"] = notification_time
+
+        if notifications_enabled is not None:
+            fields["notifications_enabled"] = notifications_enabled
+
+        if age is not None:
+            if age < 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="age cannot be negative.",
+                )
+
+            fields["age"] = age
+
+        if gender is not None:
+            fields["gender"] = gender
+
+        if qualification is not None:
+            fields["qualification"] = qualification
+
+        if course is not None:
+            fields["course"] = course
+
+        if phone_number is not None:
+            fields["phone_number"] = phone_number
+
+        # Prevent mentees from changing mentor fields
+        mentor_fields_received = any([
+            bio is not None,
+            designation is not None,
+            experience_years is not None,
+            experience_months is not None,
+            resume is not None,
+        ])
+
+        if role != "mentor" and mentor_fields_received:
+            raise HTTPException(
+                status_code=403,
+                detail="Mentor professional fields can only be updated by mentors.",
+            )
+
+        # Mentor fields
         if role == "mentor":
-            update_data["bio"] = body.bio
+            if bio is not None:
+                fields["bio"] = bio
 
-        if role == "mentee":
-            update_data["learning_goal"] = body.learning_goal
+            if designation is not None:
+                fields["designation"] = designation
 
-        update_data["updated_at"] = datetime.now(timezone.utc)
+            if experience_years is not None:
+                if experience_years < 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="experience_years cannot be negative.",
+                    )
 
-        set_clause = ", ".join(f"{k} = %s" for k in update_data.keys())
+                fields["experience_years"] = experience_years
+
+            if experience_months is not None:
+                if experience_months < 0 or experience_months > 11:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="experience_months must be between 0 and 11.",
+                    )
+
+                fields["experience_months"] = experience_months
+
+            if resume is not None:
+                allowed_resume_types = [
+                    "application/pdf",
+                    "application/msword",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ]
+
+                if resume.content_type not in allowed_resume_types:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Only PDF, DOC, or DOCX resumes are allowed.",
+                    )
+
+                bucket_name = os.environ.get("R2_BUCKET_NAME")
+                folder = os.environ.get(
+                    "R2_MENTOR_RESUME_FOLDER",
+                    "mentor-resumes",
+                )
+
+                if not bucket_name:
+                    raise HTTPException(
+                        status_code=500,
+                        detail="R2_BUCKET_NAME is missing.",
+                    )
+
+                extension = resume.filename.rsplit(".", 1)[-1].lower()
+
+                resume_key = (
+                    f"{folder}/mentor_{db_user['id']}/"
+                    f"resume.{extension}"
+                )
+
+                r2 = get_r2_client()
+
+                r2.upload_fileobj(
+                    resume.file,
+                    bucket_name,
+                    resume_key,
+                    ExtraArgs={
+                        "ContentType": resume.content_type,
+                    },
+                )
+
+                fields["mentor_resume_key"] = resume_key
+                fields["mentor_resume_filename"] = resume.filename
+                fields["mentor_resume_uploaded_at"] = datetime.now(
+                    timezone.utc
+                )
+
+        # Prevent mentors from changing mentee fields
+        if role != "mentee" and learning_goal is not None:
+            raise HTTPException(
+                status_code=403,
+                detail="learning_goal can only be updated by mentees.",
+            )
+
+        # Mentee fields
+        if role == "mentee" and learning_goal is not None:
+            fields["learning_goal"] = learning_goal
+
+        if not fields:
+            raise HTTPException(
+                status_code=400,
+                detail="No profile fields provided to update.",
+            )
+
+        fields["updated_at"] = datetime.now(timezone.utc)
+
+        set_clause = ", ".join(
+            f"{column} = %s"
+            for column in fields.keys()
+        )
+
+        values = list(fields.values()) + [firebase_uid]
 
         cur.execute(
             f"""
@@ -651,25 +829,56 @@ def replace_my_profile(
             WHERE firebase_uid = %s
             RETURNING *
             """,
-            list(update_data.values()) + [firebase_uid]
+            values,
         )
 
         updated = cur.fetchone()
 
+        if not updated:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found.",
+            )
+
         conn.commit()
 
-        updated = dict(updated)
-        updated.pop("fcm_token", None)
-        updated.pop("device_id", None)
+        user = dict(updated)
+
+        # Never expose internal device information
+        user.pop("fcm_token", None)
+        user.pop("device_id", None)
+
+        # Mentees must not receive mentor-only fields
+        if role == "mentee":
+            user.pop("bio", None)
+            user.pop("designation", None)
+            user.pop("experience_years", None)
+            user.pop("experience_months", None)
+            user.pop("mentor_resume_key", None)
+            user.pop("mentor_resume_filename", None)
+            user.pop("mentor_resume_uploaded_at", None)
+
+        # Mentors must not receive mentee-only fields
+        if role == "mentor":
+            user.pop("learning_goal", None)
 
         return {
             "status": "updated",
-            "user": updated
+            "role": role,
+            "user": user,
         }
+
+    except HTTPException:
+        conn.rollback()
+        raise
 
     except Exception as e:
         conn.rollback()
-        raise HTTPException(status_code=500, detail=f"Profile update failed: {str(e)}")
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Profile update failed: {str(e)}",
+        )
 
     finally:
         conn.close()

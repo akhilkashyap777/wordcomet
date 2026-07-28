@@ -80,6 +80,43 @@
         </section>
 
         <hr>
+                </section>
+
+        <hr>
+
+        <section>
+            <h2>Friends</h2>
+
+            <p>
+                Total friends:
+                <strong id="friendsCount">0</strong>
+            </p>
+
+            <div id="friendsPreview">
+                <p>Loading friends...</p>
+            </div>
+
+            <a href="friends.html">
+                View All Friends
+            </a>
+        </section>
+
+        <hr>
+
+        <section>
+            <h2>Pending Friend Requests</h2>
+
+            <p>
+                Pending requests:
+                <strong id="pendingFriendsCount">0</strong>
+            </p>
+
+            <div id="pendingFriends">
+                <p>Loading requests...</p>
+            </div>
+        </section>
+
+        <hr>
 
         <section id="mentorAvailabilitySection" hidden>
             <h2>My Availability</h2>
@@ -395,6 +432,202 @@
         });
     }
 
+    async function loadFriendsPreview() {
+        const container = document.getElementById("friendsPreview");
+        const countElement = document.getElementById("friendsCount");
+
+        container.innerHTML = "<p>Loading friends...</p>";
+
+        try {
+            const friends = await api("/friends/list");
+
+            countElement.textContent = Array.isArray(friends)
+                ? friends.length
+                : 0;
+
+            if (!Array.isArray(friends) || friends.length === 0) {
+                container.innerHTML =
+                    "<p>You have not added any friends yet.</p>";
+                return;
+            }
+
+            container.innerHTML = "";
+
+            friends.slice(0, 5).forEach(friend => {
+                const item = document.createElement("div");
+
+                if (friend.profile_picture_url) {
+                    const image = document.createElement("img");
+
+                    image.src = friend.profile_picture_url;
+                    image.alt = friend.display_name || "Friend";
+                    image.width = 50;
+                    image.height = 50;
+
+                    item.appendChild(image);
+                }
+
+                const name = document.createElement("p");
+                const strong = document.createElement("strong");
+
+                strong.textContent =
+                    friend.display_name || "Unknown user";
+
+                name.appendChild(strong);
+                item.appendChild(name);
+
+                const email = document.createElement("p");
+                email.textContent = friend.email || "-";
+                item.appendChild(email);
+
+                const role = document.createElement("p");
+                role.textContent =
+                    `Role: ${friend.role || "Not specified"}`;
+
+                item.appendChild(role);
+                item.appendChild(document.createElement("hr"));
+
+                container.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error("Friends error:", error);
+
+            countElement.textContent = "0";
+            container.innerHTML =
+                "<p>Could not load friends.</p>";
+        }
+    }
+
+    async function loadPendingFriendRequests() {
+        const container = document.getElementById("pendingFriends");
+        const countElement =
+            document.getElementById("pendingFriendsCount");
+
+        container.innerHTML = "<p>Loading requests...</p>";
+
+        try {
+            const requests = await api("/friends/pending");
+
+            countElement.textContent = Array.isArray(requests)
+                ? requests.length
+                : 0;
+
+            if (!Array.isArray(requests) || requests.length === 0) {
+                container.innerHTML =
+                    "<p>No pending friend requests.</p>";
+                return;
+            }
+
+            container.innerHTML = "";
+
+            requests.slice(0, 5).forEach(request => {
+                const item = document.createElement("div");
+
+                if (request.profile_picture_url) {
+                    const image = document.createElement("img");
+
+                    image.src = request.profile_picture_url;
+                    image.alt =
+                        request.display_name || "Friend request";
+
+                    image.width = 50;
+                    image.height = 50;
+
+                    item.appendChild(image);
+                }
+
+                const name = document.createElement("p");
+                const strong = document.createElement("strong");
+
+                strong.textContent =
+                    request.display_name || "Unknown user";
+
+                name.appendChild(strong);
+                item.appendChild(name);
+
+                const email = document.createElement("p");
+                email.textContent = request.email || "-";
+                item.appendChild(email);
+
+                const role = document.createElement("p");
+                role.textContent =
+                    `Role: ${request.role || "Not specified"}`;
+
+                item.appendChild(role);
+
+                const acceptButton = document.createElement("button");
+                acceptButton.type = "button";
+                acceptButton.textContent = "Accept";
+
+                acceptButton.addEventListener("click", () => {
+                    respondToFriendRequest(
+                        request.friendship_id,
+                        "accept"
+                    );
+                });
+
+                item.appendChild(acceptButton);
+
+                const declineButton = document.createElement("button");
+                declineButton.type = "button";
+                declineButton.textContent = "Decline";
+
+                declineButton.addEventListener("click", () => {
+                    respondToFriendRequest(
+                        request.friendship_id,
+                        "decline"
+                    );
+                });
+
+                item.appendChild(declineButton);
+                item.appendChild(document.createElement("hr"));
+
+                container.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error("Pending friend requests error:", error);
+
+            countElement.textContent = "0";
+            container.innerHTML =
+                "<p>Could not load pending friend requests.</p>";
+        }
+    }
+
+    async function respondToFriendRequest(requestId, action) {
+        setError("");
+
+        try {
+            const data = await api("/friends/respond", {
+                method: "POST",
+                body: JSON.stringify({
+                    request_id: requestId,
+                    action: action
+                })
+            });
+
+            window.alert(
+                data.message || `Friend request ${action}ed.`
+            );
+
+            await Promise.all([
+                loadPendingFriendRequests(),
+                loadFriendsPreview(),
+                loadFriendsPreview(),
+                loadPendingFriendRequests()
+            ]);
+
+        } catch (error) {
+            console.error("Friend response error:", error);
+
+            setError(
+                error.message ||
+                "Could not respond to the friend request."
+            );
+        }
+    }
+
     function showRoleSections() {
         document.getElementById("mentorAvailabilitySection").hidden =
             profileData.role !== "mentor";
@@ -402,6 +635,8 @@
         document.getElementById("menteeActionsSection").hidden =
             profileData.role !== "mentee";
     }
+
+    
 
     async function loadDashboard() {
         loadingMessage.hidden = false;
@@ -414,7 +649,9 @@
 
             await Promise.all([
                 loadCurrentBooking(),
-                loadMentorAvailability()
+                loadMentorAvailability(),
+                loadFriendsPreview(),
+                loadPendingFriendRequests()
             ]);
 
             dashboardContent.hidden = false;
