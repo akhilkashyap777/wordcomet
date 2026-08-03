@@ -29,7 +29,7 @@ from firebase_admin import auth as fb_auth
 from typing import Optional
 from fastapi import HTTPException, Query
 import boto3
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, Form
 
 load_dotenv()
 
@@ -353,9 +353,22 @@ def get_mentor_slots(mentor_id: int, session_date: date):
 
 @router.post("/bookings")
 def book_slot(
-    body: BookSlotBody,
+    mentor_id: int = Form(...),
+    availability_id: Optional[int] = Form(None),
+    session_date: date = Form(...),
+    start_time: str = Form(...),
+    end_time: str = Form(...),
+    resume: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
+
+    body = BookSlotBody(
+        mentor_id=mentor_id,
+        availability_id=availability_id,
+        session_date=session_date,
+        start_time=start_time,
+        end_time=end_time,
+    )
     """Mentee books one slot with a mentor."""
     db_user = get_db_user_by_firebase_uid(current_user["uid"])
     require_role(db_user, "mentee")
@@ -433,8 +446,73 @@ def book_slot(
             ),
         )
         booking = dict(cur.fetchone())
+        booking_id = booking["id"]
+
+        allowed_content_types = [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ]
+
+        if resume.content_type not in allowed_content_types:
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF, DOC, or DOCX resumes are allowed.",
+            )
+
+        bucket_name = os.environ.get("R2_BUCKET_NAME")
+        folder = os.environ.get("R2_RESUME_FOLDER", "resumes")
+
+        if not bucket_name:
+            raise HTTPException(
+                status_code=500,
+                detail="R2_BUCKET_NAME missing in env.",
+            )
+
+        file_ext = resume.filename.split(".")[-1].lower()
+
+        resume_key = (
+            f"{folder}/mentee_{db_user['id']}/"
+            f"booking_{booking_id}/resume.{file_ext}"
+        )
+
+        r2 = get_r2_client()
+
+        r2.upload_fileobj(
+            resume.file,
+            bucket_name,
+            resume_key,
+            ExtraArgs={
+                "ContentType": resume.content_type,
+            },
+        )
+
+        cur.execute(
+            """
+            UPDATE mentor_bookings
+            SET
+                resume_key = %s,
+                resume_filename = %s,
+                resume_uploaded_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (
+                resume_key,
+                resume.filename,
+                booking_id,
+            ),
+        )
+
+        booking = dict(cur.fetchone())
+
         conn.commit()
-        return {"status": "booked", "booking": booking}
+
+        return {
+            "status": "booked",
+            "message": "Booking created and resume uploaded successfully.",
+            "booking": booking,
+        }
 
     except psycopg2.errors.UniqueViolation:
         conn.rollback()
