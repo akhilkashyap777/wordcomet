@@ -21,14 +21,13 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: "DM Sans", sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow-y: scroll;
+    padding: 32px;
+    overflow-x: hidden;
+    overflow-y: auto;
     position: relative;
   }
 
@@ -46,14 +45,17 @@
 
   /* ── card ── */
   .card {
-    position: relative; z-index: 10;
+    position: relative;
+    z-index: 10;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 24px;
     padding: 48px 44px 40px;
-    width: 440px;
-    max-width: calc(100vw - 32px);
-    box-shadow: 0 0 0 1px rgba(108,99,255,0.07), 0 32px 80px rgba(0,0,0,0.5);
+    width: 580px;
+    max-width: 100%;
+    box-shadow:
+        0 0 0 1px rgba(108,99,255,0.07),
+        0 32px 80px rgba(0,0,0,0.5);
     animation: rise 0.55s cubic-bezier(0.16,1,0.3,1) both;
   }
   @keyframes rise { from { opacity:0; transform: translateY(24px) scale(0.97); } to { opacity:1; transform: none; } }
@@ -291,6 +293,100 @@
     font-size: 0.9rem; cursor: pointer; transition: background 0.2s;
   }
   .btn-confirm-delete:hover { background: rgba(255,101,132,0.18); }
+
+  .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+  }
+
+  .topbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+  }
+
+  .site-header {
+    width: min(100%, 1480px);
+    min-height: 86px;
+    margin: 0 auto 46px;
+    padding: 18px 24px;
+    position: relative;
+    z-index: 10;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: rgba(17, 17, 24, 0.92);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+}
+
+.topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 38px;
+    margin-left: auto;
+}
+
+.nav-link {
+    padding: 8px 0;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-link:hover {
+    color: var(--text);
+    transform: translateY(-1px);
+}
+
+.nav-link.active {
+    color: #ffffff;
+}
+
+.nav-link.logout-link {
+    color: var(--red);
+}
+
+.page-content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+}
+
+.topbar-btn:hover {
+    transform: translateY(-2px);
+
+    color: #ffffff;
+    background: rgba(108, 99, 255, 0.22);
+
+    border-color: rgba(108, 99, 255, 0.35);
+}
+
+.topbar-btn:active {
+    transform: translateY(0);
+}
+
+.topbar-btn.active {
+    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        #8179ff
+    );
+
+    border-color: var(--accent);
+}
 </style>
 </head>
 <body>
@@ -298,21 +394,41 @@
 <div class="orb orb1"></div>
 <div class="orb orb2"></div>
 
-<div class="card" id="card">
-  <div class="topbar">
-    <a class="logo" href="session.html">
-      <div class="logo-icon">☄️</div>
-      <div class="logo-text">Word<span>Comet</span></div>
-    </a>
-    <button onclick="window.location.href='friends.html'">
-        Friends
+<header class="site-header">
+  <a class="logo" href="session.html">
+    <div class="logo-icon">☄️</div>
+    <div class="logo-text">Word<span>Comet</span></div>
+  </a>
+
+  <nav class="topbar-nav">
+    <button class="nav-link" onclick="window.location.href='session.html'">
+      Session
     </button>
 
-    <button onclick="window.location.href='booking.html'">
-        Mentorship
+    <button class="nav-link" onclick="window.location.href='dashboard.html'">
+        Dashboard
     </button>
-    <button class="btn-logout" onclick="logout()">Sign out</button>
-  </div>
+
+    <button class="nav-link" onclick="window.location.href='friends.html'">
+      Friends
+    </button>
+
+    <button class="nav-link" onclick="window.location.href='booking.html'">
+      Mentorship
+    </button>
+
+    <button class="nav-link active" onclick="window.location.href='settings.html'">
+      Profile
+    </button>
+
+    <button class="nav-link logout-link" onclick="logout()">
+      Logout
+    </button>
+  </nav>
+</header>
+
+<main class="page-content">
+  <div class="card" id="card">
 
   <!-- Loading state -->
   <div id="loadingState" style="text-align:center; padding: 40px 0; color: var(--muted); font-size:0.9rem;">
@@ -382,6 +498,8 @@
 
   </div>
 </div>
+
+</main>
 
 <!-- Delete confirm overlay -->
 <div class="overlay" id="deleteOverlay">

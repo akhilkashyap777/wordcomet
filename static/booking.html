@@ -1,121 +1,53 @@
 <!DOCTYPE html>
 <html>
-
-<style>
-    body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f5f5f5;
-}
-
-h1, h2, h3 {
-    margin-bottom: 10px;
-}
-
-#userInfo,
-#mentorSection,
-#menteeSection {
-    background: white;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-input,
-select {
-    width: 100%;
-    max-width: 300px;
-    padding: 8px;
-    margin-bottom: 15px;
-}
-
-button {
-    padding: 8px 14px;
-    cursor: pointer;
-    border: none;
-    border-radius: 4px;
-    background: #2563eb;
-    color: white;
-}
-
-button:hover {
-    background: #1d4ed8;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-}
-
-table th,
-table td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: left;
-}
-
-table th {
-    background: #f0f0f0;
-}
-
-hr {
-    margin: 20px 0;
-}
-
-#videoModal {
-    position: fixed;
-    top: 5%;
-    left: 5%;
-    width: 90%;
-    height: 90%;
-    background: white;
-    border: 2px solid #333;
-    padding: 20px;
-    overflow: auto;
-    z-index: 9999;
-}
-
-#videoModal video {
-    width: 45%;
-    background: black;
-    margin-right: 10px;
-    border-radius: 8px;
-}
-
-#videoModal button {
-    margin-top: 15px;
-    margin-right: 10px;
-}
-
-.hidden {
-    display: none;
-}
-</style>
 <head>
     <title>WordComet Mentorship</title>
+    <link rel="stylesheet" href="css/booking.css">
 </head>
 <body>
 
-    <h1>WordComet Mentorship</h1>
+    <header class="site-header">
+        <a class="logo" href="session.html">
+            <div class="logo-icon">☄️</div>
+            <div class="logo-text">
+                Word<span>Comet</span>
+            </div>
+        </a>
 
-    <!-- USER INFO -->
-    <div id="userInfo">
-        <h3>User</h3>
-        <p>Name: <span id="userName"></span></p>
-        <p>Role: <span id="userRole"></span></p>
-    </div>
+        <nav class="topbar-nav">
 
-    <button onclick="window.location.href='session.html'">
-        Back to Session
-    </button>
+            <button class="nav-link"
+                onclick="window.location.href='session.html'">
+                Session
+            </button>
+
+            <button class="nav-link"
+                onclick="window.location.href='dashboard.html'">
+                Dashboard
+            </button>
+
+            <button class="nav-link"
+                onclick="window.location.href='friends.html'">
+                Friends
+            </button>
+
+            <button class="nav-link active"
+                onclick="window.location.href='booking.html'">
+                Mentorship
+            </button>
+
+            <button class="nav-link"
+                onclick="window.location.href='settings.html'">
+                Profile
+            </button>
+
+            <button class="nav-link logout-link"
+                onclick="logout()">
+                Logout
+            </button>
+
+        </nav>
+    </header>
 
     <hr>
 
@@ -364,9 +296,6 @@ async function loadProfile() {
     currentUser = user;
 
     localStorage.setItem("wc_user", JSON.stringify(user));
-
-    document.getElementById("userName").textContent = user.display_name || user.email;
-    document.getElementById("userRole").textContent = user.role;
 }
 
 /* ---------------- MENTOR ---------------- */
@@ -580,6 +509,13 @@ function prepareJoinCall(videoRoomId) {
 
     // Later your existing WebRTC code should connect to:
     // ws://127.0.0.1:8011/mentor/ws/video/${videoRoomId}?token=${token}
+}
+
+/* ------------------ Logout ---------------- */
+
+function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
 }
 
 /* ---------------- HELPERS ---------------- */

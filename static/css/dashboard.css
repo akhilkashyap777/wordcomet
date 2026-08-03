@@ -1,0 +1,2890 @@
+@import url(
+    "https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap"
+);
+
+:root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #14141f;
+    --card-hover: #181824;
+
+    --border: #1e1e2e;
+    --border-light: rgba(255, 255, 255, 0.09);
+
+    --accent: #6c63ff;
+    --accent-hover: #7b73ff;
+    --accent-soft: rgba(108, 99, 255, 0.12);
+
+    --accent-secondary: #ff6584;
+    --accent-secondary-soft: rgba(255, 101, 132, 0.12);
+
+    --text: #e8e8f0;
+    --text-soft: #b7b7c9;
+    --muted: #76768f;
+
+    --success: #48c78e;
+    --warning: #fbbf24;
+    --danger: #ff536f;
+
+    --page-width: 1180px;
+    --radius-small: 10px;
+    --radius-medium: 16px;
+    --radius-large: 22px;
+
+    --shadow-card: 0 18px 48px rgba(0, 0, 0, 0.32);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    min-height: 100%;
+    background: var(--bg);
+}
+
+body {
+    min-height: 100vh;
+    padding: 24px;
+
+    position: relative;
+    overflow-x: hidden;
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+
+    color: var(--text);
+    background: var(--bg);
+}
+
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    z-index: -1;
+
+    border-radius: 50%;
+    filter: blur(110px);
+
+    pointer-events: none;
+    opacity: 0.18;
+}
+
+body::before {
+    width: 520px;
+    height: 520px;
+
+    top: -210px;
+    left: -180px;
+
+    background: var(--accent);
+}
+
+body::after {
+    width: 460px;
+    height: 460px;
+
+    right: -170px;
+    bottom: -190px;
+
+    background: var(--accent-secondary);
+}
+
+body > h1,
+body > nav,
+body > hr,
+body > #loadingMessage,
+body > #errorMessage,
+body > #dashboardContent {
+    width: min(100%, var(--page-width));
+    margin-left: auto;
+    margin-right: auto;
+}
+
+body > h1 {
+    margin-bottom: 20px;
+
+    font-family: "Syne", sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.045em;
+
+    color: var(--text);
+}
+
+h2,
+h3 {
+    font-family: "Syne", sans-serif;
+    color: var(--text);
+}
+
+h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+h3 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+p {
+    color: var(--text-soft);
+}
+
+a {
+    color: var(--accent-hover);
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+body > hr,
+#dashboardContent > hr {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    body {
+        padding: 16px;
+    }
+
+    body > h1 {
+        margin-bottom: 16px;
+        font-size: 1.8rem;
+    }
+}
+
+/* ========================================
+   PART 2 — PAGE TITLE AND TOP NAVIGATION
+======================================== */
+
+body > h1 {
+    position: relative;
+    padding-left: 54px;
+}
+
+body > h1::before {
+    content: "☄️";
+
+    width: 42px;
+    height: 42px;
+
+    position: absolute;
+    left: 0;
+    top: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        var(--accent-secondary)
+    );
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 19px;
+
+    box-shadow:
+        0 10px 28px rgba(108, 99, 255, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+    transform: translateY(-50%);
+}
+
+body > nav {
+    min-height: 70px;
+    margin-bottom: 28px;
+    padding: 12px 14px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    position: relative;
+
+    background: rgba(20, 20, 31, 0.76);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-medium);
+
+    box-shadow:
+        0 12px 34px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+body > nav::before {
+    content: "";
+
+    width: 3px;
+    height: 28px;
+
+    margin-right: 5px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        180deg,
+        var(--accent),
+        var(--accent-secondary)
+    );
+
+    box-shadow: 0 0 16px rgba(108, 99, 255, 0.38);
+}
+
+body > nav button {
+    min-height: 42px;
+    padding: 10px 14px;
+
+    border: 1px solid transparent;
+    border-radius: 10px;
+
+    background: transparent;
+    color: var(--muted);
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.18s ease,
+        box-shadow 0.2s ease;
+}
+
+body > nav button:hover {
+    color: var(--text);
+
+    background: rgba(255, 255, 255, 0.065);
+    border-color: rgba(255, 255, 255, 0.09);
+
+    transform: translateY(-1px);
+}
+
+body > nav button:active {
+    transform: translateY(0);
+}
+
+body > nav button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+#refreshBtn {
+    margin-left: auto;
+
+    color: #c2bfff;
+    background: var(--accent-soft);
+    border-color: rgba(108, 99, 255, 0.2);
+}
+
+#refreshBtn:hover {
+    color: #ffffff;
+    background: rgba(108, 99, 255, 0.22);
+    border-color: rgba(108, 99, 255, 0.38);
+
+    box-shadow: 0 8px 22px rgba(108, 99, 255, 0.14);
+}
+
+#logoutBtn {
+    color: #ff9aad;
+
+    background: var(--accent-secondary-soft);
+    border-color: rgba(255, 101, 132, 0.18);
+}
+
+#logoutBtn:hover {
+    color: #ffffff;
+
+    background: rgba(255, 101, 132, 0.2);
+    border-color: rgba(255, 101, 132, 0.36);
+
+    box-shadow: 0 8px 22px rgba(255, 101, 132, 0.12);
+}
+
+@media (max-width: 900px) {
+    body > nav {
+        flex-wrap: wrap;
+    }
+
+    #refreshBtn {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    body > h1 {
+        padding-left: 48px;
+    }
+
+    body > h1::before {
+        width: 38px;
+        height: 38px;
+
+        border-radius: 11px;
+        font-size: 17px;
+    }
+
+    body > nav {
+        padding: 10px;
+        gap: 7px;
+    }
+
+    body > nav::before {
+        display: none;
+    }
+
+    body > nav button {
+        flex: 1 1 calc(50% - 7px);
+        padding: 11px 8px;
+
+        font-size: 0.8rem;
+        text-align: center;
+    }
+
+    #refreshBtn,
+    #logoutBtn {
+        flex-basis: calc(50% - 7px);
+    }
+}
+
+@media (max-width: 380px) {
+    body > nav button {
+        flex-basis: 100%;
+    }
+
+    #refreshBtn,
+    #logoutBtn {
+        flex-basis: 100%;
+    }
+}
+
+/* ========================================
+   PART 3 — LOADING, ERROR, DASHBOARD ENTRY
+======================================== */
+
+#loadingMessage,
+#errorMessage {
+    width: min(100%, var(--page-width));
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#loadingMessage {
+    min-height: 140px;
+    padding: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    color: var(--text-soft);
+    background: rgba(20, 20, 31, 0.76);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        0 18px 46px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+#loadingMessage::before {
+    content: "";
+
+    width: 22px;
+    height: 22px;
+
+    flex: 0 0 auto;
+
+    border: 3px solid rgba(255, 255, 255, 0.12);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+
+    animation: dashboardSpinner 0.8s linear infinite;
+}
+
+#errorMessage {
+    min-height: 0;
+    margin-bottom: 20px;
+    padding: 0;
+
+    overflow: hidden;
+
+    color: #ffbac6;
+    background: transparent;
+
+    border: 0 solid rgba(255, 101, 132, 0.3);
+    border-radius: var(--radius-medium);
+
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.55;
+
+    opacity: 0;
+
+    transition:
+        min-height 0.22s ease,
+        padding 0.22s ease,
+        border-width 0.22s ease,
+        background 0.22s ease,
+        opacity 0.22s ease;
+}
+
+#errorMessage:not(:empty) {
+    min-height: 52px;
+    padding: 14px 16px;
+
+    display: flex;
+    align-items: center;
+
+    background: rgba(255, 101, 132, 0.1);
+    border-width: 1px;
+
+    box-shadow:
+        0 10px 28px rgba(255, 101, 132, 0.08),
+        inset 3px 0 0 var(--danger);
+
+    opacity: 1;
+}
+
+#errorMessage:not(:empty)::before {
+    content: "!";
+
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: #ffffff;
+    background: var(--danger);
+
+    font-family: "Syne", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+#dashboardContent {
+    position: relative;
+
+    animation: dashboardContentEnter 0.45s
+        cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#dashboardContent[hidden] {
+    display: none !important;
+}
+
+@keyframes dashboardSpinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dashboardContentEnter {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #loadingMessage::before {
+        animation-duration: 1.8s;
+    }
+
+    #dashboardContent {
+        animation: none;
+    }
+}
+
+@media (max-width: 600px) {
+    #loadingMessage {
+        min-height: 120px;
+        padding: 22px;
+
+        border-radius: 18px;
+        font-size: 0.9rem;
+    }
+
+    #errorMessage:not(:empty) {
+        padding: 13px 14px;
+        font-size: 0.84rem;
+    }
+}
+
+/* ========================================
+   PART 4 — PROFILE CARD
+======================================== */
+
+#dashboardContent > section:first-of-type {
+    position: relative;
+
+    padding: 28px;
+    margin-bottom: 24px;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(108, 99, 255, 0.12),
+            transparent 45%
+        ),
+        rgba(20, 20, 31, 0.92);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#dashboardContent > section:first-of-type::before {
+    content: "";
+
+    width: 180px;
+    height: 180px;
+
+    position: absolute;
+    top: -90px;
+    right: -65px;
+
+    border-radius: 50%;
+
+    background: var(--accent);
+    filter: blur(70px);
+    opacity: 0.12;
+
+    pointer-events: none;
+}
+
+#dashboardContent > section:first-of-type::after {
+    content: "👤";
+
+    width: 54px;
+    height: 54px;
+
+    position: absolute;
+    top: 24px;
+    right: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 15px;
+
+    background: var(--accent-soft);
+    border: 1px solid rgba(108, 99, 255, 0.22);
+
+    font-size: 23px;
+
+    box-shadow:
+        0 10px 28px rgba(108, 99, 255, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+#dashboardContent > section:first-of-type h2 {
+    margin-bottom: 22px;
+    padding-right: 70px;
+
+    font-size: 1.35rem;
+}
+
+#dashboardContent > section:first-of-type h2::after {
+    content: "";
+
+    width: 42px;
+    height: 3px;
+
+    display: block;
+    margin-top: 9px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        90deg,
+        var(--accent),
+        var(--accent-secondary)
+    );
+}
+
+#dashboardContent > section:first-of-type p {
+    min-height: 48px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    align-items: center;
+    gap: 14px;
+
+    color: var(--muted);
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 12px;
+
+    font-size: 0.9rem;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.18s ease;
+}
+
+#dashboardContent > section:first-of-type p:last-child {
+    margin-bottom: 0;
+}
+
+#dashboardContent > section:first-of-type p:hover {
+    background: rgba(255, 255, 255, 0.045);
+    border-color: rgba(108, 99, 255, 0.17);
+
+    transform: translateX(2px);
+}
+
+#dashboardContent > section:first-of-type span {
+    min-width: 0;
+
+    color: var(--text);
+    font-weight: 500;
+
+    overflow-wrap: anywhere;
+}
+
+#role {
+    width: fit-content;
+    min-width: 84px;
+
+    padding: 5px 10px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+
+    color: #c8c5ff;
+    background: var(--accent-soft);
+    border: 1px solid rgba(108, 99, 255, 0.24);
+
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.2;
+
+    text-transform: capitalize;
+}
+
+@media (max-width: 600px) {
+    #dashboardContent > section:first-of-type {
+        padding: 22px 18px;
+
+        border-radius: 18px;
+    }
+
+    #dashboardContent > section:first-of-type::after {
+        width: 46px;
+        height: 46px;
+
+        top: 18px;
+        right: 18px;
+
+        border-radius: 13px;
+        font-size: 20px;
+    }
+
+    #dashboardContent > section:first-of-type h2 {
+        margin-bottom: 18px;
+        padding-right: 58px;
+
+        font-size: 1.2rem;
+    }
+
+    #dashboardContent > section:first-of-type p {
+        grid-template-columns: 1fr;
+        gap: 4px;
+
+        padding: 12px;
+    }
+}
+
+/* ========================================
+   PART 5 — CURRENT MENTORSHIP SESSION
+======================================== */
+
+#dashboardContent > section:nth-of-type(2) {
+    position: relative;
+
+    margin-bottom: 24px;
+    padding: 30px;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(108, 99, 255, 0.1),
+            transparent 38%
+        ),
+        rgba(20, 20, 31, 0.94);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#dashboardContent > section:nth-of-type(2)::before {
+    content: "";
+
+    width: 240px;
+    height: 240px;
+
+    position: absolute;
+    top: -130px;
+    right: -90px;
+
+    border-radius: 50%;
+
+    background: var(--accent);
+    filter: blur(90px);
+    opacity: 0.1;
+
+    pointer-events: none;
+}
+
+#dashboardContent > section:nth-of-type(2) > h2 {
+    margin-bottom: 24px;
+    padding-right: 70px;
+
+    position: relative;
+
+    font-size: 1.35rem;
+}
+
+#dashboardContent > section:nth-of-type(2) > h2::before {
+    content: "◉";
+
+    width: 46px;
+    height: 46px;
+
+    position: absolute;
+    right: 0;
+    top: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    color: #b9b5ff;
+    background: var(--accent-soft);
+    border: 1px solid rgba(108, 99, 255, 0.22);
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 1rem;
+
+    box-shadow:
+        0 10px 26px rgba(108, 99, 255, 0.13),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+    transform: translateY(-50%);
+}
+
+#dashboardContent > section:nth-of-type(2) > h2::after {
+    content: "";
+
+    width: 52px;
+    height: 3px;
+
+    display: block;
+    margin-top: 9px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        90deg,
+        var(--accent),
+        var(--accent-secondary)
+    );
+}
+
+/* ========================================
+   NO ACTIVE BOOKING STATE
+======================================== */
+
+#noActiveBooking {
+    min-height: 210px;
+    padding: 34px 24px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.022);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-medium);
+}
+
+#noActiveBooking::before {
+    content: "☄";
+
+    width: 62px;
+    height: 62px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 18px;
+
+    color: #c9c6ff;
+    background: var(--accent-soft);
+    border: 1px solid rgba(108, 99, 255, 0.24);
+
+    font-size: 1.55rem;
+
+    box-shadow:
+        0 12px 32px rgba(108, 99, 255, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+#noActiveBooking p {
+    max-width: 430px;
+
+    color: var(--muted);
+
+    font-size: 0.95rem;
+    line-height: 1.65;
+}
+
+#openBookingBtn {
+    min-height: 44px;
+    padding: 11px 20px;
+
+    border: 1px solid rgba(108, 99, 255, 0.45);
+    border-radius: 11px;
+
+    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        #8179ff
+    );
+
+    font-size: 0.88rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 10px 28px rgba(108, 99, 255, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+#openBookingBtn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 14px 34px rgba(108, 99, 255, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+    filter: brightness(1.06);
+}
+
+#openBookingBtn:active {
+    transform: translateY(0);
+}
+
+/* ========================================
+   ACTIVE BOOKING CONTAINER
+======================================== */
+
+#activeBooking {
+    position: relative;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+#activeBooking > p {
+    min-height: 58px;
+    padding: 13px 15px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+
+    color: var(--muted);
+
+    background: rgba(255, 255, 255, 0.028);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.4;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.18s ease;
+}
+
+#activeBooking > p:hover {
+    background: rgba(255, 255, 255, 0.045);
+    border-color: rgba(108, 99, 255, 0.17);
+
+    transform: translateY(-1px);
+}
+
+#activeBooking > p span {
+    color: var(--text);
+
+    font-size: 0.94rem;
+    font-weight: 600;
+
+    overflow-wrap: anywhere;
+}
+
+/* Status row */
+
+#activeBooking > p:nth-of-type(2) {
+    border-color: rgba(72, 199, 142, 0.16);
+    background: rgba(72, 199, 142, 0.05);
+}
+
+#bookingStatus {
+    width: fit-content;
+    padding: 4px 9px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    border-radius: 999px;
+
+    color: #87e6b7 !important;
+    background: rgba(72, 199, 142, 0.1);
+    border: 1px solid rgba(72, 199, 142, 0.2);
+
+    font-size: 0.74rem !important;
+    text-transform: capitalize;
+}
+
+#bookingStatus::before {
+    content: "";
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: var(--success);
+
+    box-shadow: 0 0 10px rgba(72, 199, 142, 0.6);
+}
+
+/* Participant name row */
+
+#activeBooking > p:nth-of-type(6) {
+    grid-column: 1 / -1;
+}
+
+/* ========================================
+   PARTICIPANT PROFILE PICTURE
+======================================== */
+
+#participantPictureRow {
+    grid-column: 1 / -1;
+
+    min-height: 108px !important;
+
+    display: grid !important;
+    grid-template-columns: 78px 1fr;
+    align-items: center;
+    justify-content: start;
+    gap: 16px !important;
+}
+
+#participantPictureRow::after {
+    content: "Session participant";
+
+    color: var(--text);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+#participantPicture {
+    width: 72px;
+    height: 72px;
+
+    grid-row: 1 / span 2;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 18px;
+
+    background: var(--surface);
+    border: 2px solid rgba(108, 99, 255, 0.28);
+
+    box-shadow:
+        0 10px 26px rgba(0, 0, 0, 0.28),
+        0 0 0 4px rgba(108, 99, 255, 0.06);
+}
+
+/* ========================================
+   BOOKING ACTION BUTTONS
+======================================== */
+
+#joinSessionBtn,
+#cancelBookingBtn {
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 12px 18px;
+
+    border-radius: 12px;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+#joinSessionBtn {
+    border: 1px solid rgba(108, 99, 255, 0.45);
+
+    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        #8179ff
+    );
+
+    box-shadow:
+        0 12px 30px rgba(108, 99, 255, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+#joinSessionBtn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 16px 36px rgba(108, 99, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+#cancelBookingBtn {
+    border: 1px solid rgba(255, 101, 132, 0.22);
+
+    color: #ff9caf;
+    background: rgba(255, 101, 132, 0.08);
+}
+
+#cancelBookingBtn:hover {
+    color: #ffffff;
+
+    background: rgba(255, 101, 132, 0.17);
+    border-color: rgba(255, 101, 132, 0.36);
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 12px 28px rgba(255, 101, 132, 0.12);
+}
+
+#joinSessionBtn:active,
+#cancelBookingBtn:active {
+    transform: translateY(0);
+}
+
+#joinSessionBtn:focus-visible,
+#cancelBookingBtn:focus-visible,
+#openBookingBtn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+/* ========================================
+   RESPONSIVE SESSION CARD
+======================================== */
+
+@media (max-width: 700px) {
+    #dashboardContent > section:nth-of-type(2) {
+        padding: 22px 18px;
+
+        border-radius: 18px;
+    }
+
+    #dashboardContent > section:nth-of-type(2) > h2 {
+        padding-right: 58px;
+
+        font-size: 1.18rem;
+    }
+
+    #dashboardContent > section:nth-of-type(2) > h2::before {
+        width: 42px;
+        height: 42px;
+
+        border-radius: 13px;
+    }
+
+    #activeBooking {
+        grid-template-columns: 1fr;
+    }
+
+    #activeBooking > p:nth-of-type(6),
+    #participantPictureRow {
+        grid-column: auto;
+    }
+
+    #joinSessionBtn,
+    #cancelBookingBtn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 430px) {
+    #noActiveBooking {
+        min-height: 190px;
+        padding: 28px 18px;
+    }
+
+    #participantPictureRow {
+        grid-template-columns: 62px 1fr;
+    }
+
+    #participantPicture {
+        width: 58px;
+        height: 58px;
+
+        border-radius: 15px;
+    }
+
+    #activeBooking > p {
+        min-height: 54px;
+        padding: 12px;
+    }
+}
+
+/* ========================================
+   PART 5 — CURRENT MENTORSHIP SESSION
+======================================== */
+
+#dashboardContent > section:nth-of-type(2) {
+    position: relative;
+
+    margin-bottom: 24px;
+    padding: 30px;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(108, 99, 255, 0.1),
+            transparent 38%
+        ),
+        rgba(20, 20, 31, 0.94);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#dashboardContent > section:nth-of-type(2)::before {
+    content: "";
+
+    width: 240px;
+    height: 240px;
+
+    position: absolute;
+    top: -130px;
+    right: -90px;
+
+    border-radius: 50%;
+
+    background: var(--accent);
+    filter: blur(90px);
+    opacity: 0.1;
+
+    pointer-events: none;
+}
+
+#dashboardContent > section:nth-of-type(2) > h2 {
+    margin-bottom: 24px;
+    padding-right: 70px;
+
+    position: relative;
+
+    font-size: 1.35rem;
+}
+
+#dashboardContent > section:nth-of-type(2) > h2::before {
+    content: "◉";
+
+    width: 46px;
+    height: 46px;
+
+    position: absolute;
+    right: 0;
+    top: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    color: #b9b5ff;
+    background: var(--accent-soft);
+    border: 1px solid rgba(108, 99, 255, 0.22);
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 1rem;
+
+    box-shadow:
+        0 10px 26px rgba(108, 99, 255, 0.13),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+    transform: translateY(-50%);
+}
+
+#dashboardContent > section:nth-of-type(2) > h2::after {
+    content: "";
+
+    width: 52px;
+    height: 3px;
+
+    display: block;
+    margin-top: 9px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        90deg,
+        var(--accent),
+        var(--accent-secondary)
+    );
+}
+
+/* ========================================
+   NO ACTIVE BOOKING STATE
+======================================== */
+
+#noActiveBooking {
+    min-height: 210px;
+    padding: 34px 24px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.022);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-medium);
+}
+
+#noActiveBooking::before {
+    content: "☄";
+
+    width: 62px;
+    height: 62px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 18px;
+
+    color: #c9c6ff;
+    background: var(--accent-soft);
+    border: 1px solid rgba(108, 99, 255, 0.24);
+
+    font-size: 1.55rem;
+
+    box-shadow:
+        0 12px 32px rgba(108, 99, 255, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+#noActiveBooking p {
+    max-width: 430px;
+
+    color: var(--muted);
+
+    font-size: 0.95rem;
+    line-height: 1.65;
+}
+
+#openBookingBtn {
+    min-height: 44px;
+    padding: 11px 20px;
+
+    border: 1px solid rgba(108, 99, 255, 0.45);
+    border-radius: 11px;
+
+    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        #8179ff
+    );
+
+    font-size: 0.88rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 10px 28px rgba(108, 99, 255, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+#openBookingBtn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 14px 34px rgba(108, 99, 255, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+    filter: brightness(1.06);
+}
+
+#openBookingBtn:active {
+    transform: translateY(0);
+}
+
+/* ========================================
+   ACTIVE BOOKING CONTAINER
+======================================== */
+
+#activeBooking {
+    position: relative;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+#activeBooking > p {
+    min-height: 58px;
+    padding: 13px 15px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+
+    color: var(--muted);
+
+    background: rgba(255, 255, 255, 0.028);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.4;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.18s ease;
+}
+
+#activeBooking > p:hover {
+    background: rgba(255, 255, 255, 0.045);
+    border-color: rgba(108, 99, 255, 0.17);
+
+    transform: translateY(-1px);
+}
+
+#activeBooking > p span {
+    color: var(--text);
+
+    font-size: 0.94rem;
+    font-weight: 600;
+
+    overflow-wrap: anywhere;
+}
+
+/* Status row */
+
+#activeBooking > p:nth-of-type(2) {
+    border-color: rgba(72, 199, 142, 0.16);
+    background: rgba(72, 199, 142, 0.05);
+}
+
+#bookingStatus {
+    width: fit-content;
+    padding: 4px 9px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    border-radius: 999px;
+
+    color: #87e6b7 !important;
+    background: rgba(72, 199, 142, 0.1);
+    border: 1px solid rgba(72, 199, 142, 0.2);
+
+    font-size: 0.74rem !important;
+    text-transform: capitalize;
+}
+
+#bookingStatus::before {
+    content: "";
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: var(--success);
+
+    box-shadow: 0 0 10px rgba(72, 199, 142, 0.6);
+}
+
+/* Participant name row */
+
+#activeBooking > p:nth-of-type(6) {
+    grid-column: 1 / -1;
+}
+
+/* ========================================
+   PARTICIPANT PROFILE PICTURE
+======================================== */
+
+#participantPictureRow {
+    grid-column: 1 / -1;
+
+    min-height: 108px !important;
+
+    display: grid !important;
+    grid-template-columns: 78px 1fr;
+    align-items: center;
+    justify-content: start;
+    gap: 16px !important;
+}
+
+#participantPictureRow::after {
+    content: "Session participant";
+
+    color: var(--text);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+#participantPicture {
+    width: 72px;
+    height: 72px;
+
+    grid-row: 1 / span 2;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 18px;
+
+    background: var(--surface);
+    border: 2px solid rgba(108, 99, 255, 0.28);
+
+    box-shadow:
+        0 10px 26px rgba(0, 0, 0, 0.28),
+        0 0 0 4px rgba(108, 99, 255, 0.06);
+}
+
+/* ========================================
+   BOOKING ACTION BUTTONS
+======================================== */
+
+#joinSessionBtn,
+#cancelBookingBtn {
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 12px 18px;
+
+    border-radius: 12px;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+#joinSessionBtn {
+    border: 1px solid rgba(108, 99, 255, 0.45);
+
+    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        #8179ff
+    );
+
+    box-shadow:
+        0 12px 30px rgba(108, 99, 255, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+#joinSessionBtn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 16px 36px rgba(108, 99, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+#cancelBookingBtn {
+    border: 1px solid rgba(255, 101, 132, 0.22);
+
+    color: #ff9caf;
+    background: rgba(255, 101, 132, 0.08);
+}
+
+#cancelBookingBtn:hover {
+    color: #ffffff;
+
+    background: rgba(255, 101, 132, 0.17);
+    border-color: rgba(255, 101, 132, 0.36);
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 12px 28px rgba(255, 101, 132, 0.12);
+}
+
+#joinSessionBtn:active,
+#cancelBookingBtn:active {
+    transform: translateY(0);
+}
+
+#joinSessionBtn:focus-visible,
+#cancelBookingBtn:focus-visible,
+#openBookingBtn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+/* ========================================
+   RESPONSIVE SESSION CARD
+======================================== */
+
+@media (max-width: 700px) {
+    #dashboardContent > section:nth-of-type(2) {
+        padding: 22px 18px;
+
+        border-radius: 18px;
+    }
+
+    #dashboardContent > section:nth-of-type(2) > h2 {
+        padding-right: 58px;
+
+        font-size: 1.18rem;
+    }
+
+    #dashboardContent > section:nth-of-type(2) > h2::before {
+        width: 42px;
+        height: 42px;
+
+        border-radius: 13px;
+    }
+
+    #activeBooking {
+        grid-template-columns: 1fr;
+    }
+
+    #activeBooking > p:nth-of-type(6),
+    #participantPictureRow {
+        grid-column: auto;
+    }
+
+    #joinSessionBtn,
+    #cancelBookingBtn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 430px) {
+    #noActiveBooking {
+        min-height: 190px;
+        padding: 28px 18px;
+    }
+
+    #participantPictureRow {
+        grid-template-columns: 62px 1fr;
+    }
+
+    #participantPicture {
+        width: 58px;
+        height: 58px;
+
+        border-radius: 15px;
+    }
+
+    #activeBooking > p {
+        min-height: 54px;
+        padding: 12px;
+    }
+}
+
+/* ========================================
+   PART 6 — BOOKING DETAILS AND RESUME
+======================================== */
+
+#mentorBookingDetails,
+#menteeBookingDetails {
+    grid-column: 1 / -1;
+
+    margin-top: 10px;
+    padding: 22px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(108, 99, 255, 0.07),
+            transparent 48%
+        ),
+        rgba(10, 10, 15, 0.38);
+
+    border: 1px solid rgba(108, 99, 255, 0.15);
+    border-radius: var(--radius-medium);
+}
+
+#mentorBookingDetails h3,
+#menteeBookingDetails h3 {
+    margin-bottom: 16px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-size: 1rem;
+}
+
+#mentorBookingDetails h3::before,
+#menteeBookingDetails h3::before {
+    content: "";
+
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: var(--accent);
+
+    box-shadow: 0 0 12px rgba(108, 99, 255, 0.7);
+}
+
+#mentorBookingDetails p,
+#menteeBookingDetails p {
+    min-height: 46px;
+    padding: 11px 13px;
+    margin-bottom: 9px;
+
+    display: grid;
+    grid-template-columns: 145px 1fr;
+    align-items: center;
+    gap: 12px;
+
+    color: var(--muted);
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 10px;
+
+    font-size: 0.82rem;
+}
+
+#mentorBookingDetails p:last-child,
+#menteeBookingDetails p:last-child {
+    margin-bottom: 0;
+}
+
+#mentorBookingDetails p span,
+#menteeBookingDetails p span {
+    color: var(--text-soft);
+    font-weight: 500;
+
+    overflow-wrap: anywhere;
+}
+
+#menteeBookingDetails > hr {
+    height: 1px;
+
+    margin: 22px 0;
+
+    border: 0;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.12),
+        transparent
+    );
+}
+
+#resumeFile {
+    width: 100%;
+    min-height: 48px;
+
+    margin-bottom: 12px;
+    padding: 7px;
+
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.035);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 11px;
+
+    cursor: pointer;
+}
+
+#resumeFile::file-selector-button {
+    min-height: 34px;
+    margin-right: 12px;
+    padding: 7px 13px;
+
+    border: 1px solid rgba(108, 99, 255, 0.28);
+    border-radius: 8px;
+
+    color: #d4d2ff;
+    background: var(--accent-soft);
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+#resumeFile::file-selector-button:hover {
+    color: #ffffff;
+    background: rgba(108, 99, 255, 0.22);
+}
+
+#uploadResumeBtn {
+    min-height: 44px;
+    padding: 10px 18px;
+    margin-bottom: 12px;
+
+    border: 1px solid rgba(108, 99, 255, 0.38);
+    border-radius: 10px;
+
+    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        #8179ff
+    );
+
+    font-size: 0.86rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow: 0 10px 24px rgba(108, 99, 255, 0.18);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.2s ease;
+}
+
+#uploadResumeBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(108, 99, 255, 0.28);
+}
+
+@media (max-width: 600px) {
+    #mentorBookingDetails,
+    #menteeBookingDetails {
+        padding: 17px;
+    }
+
+    #mentorBookingDetails p,
+    #menteeBookingDetails p {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+
+    #uploadResumeBtn {
+        width: 100%;
+    }
+}
+
+/* ========================================
+   PART 6 — BOOKING DETAILS AND RESUME
+======================================== */
+
+#mentorBookingDetails,
+#menteeBookingDetails {
+    grid-column: 1 / -1;
+
+    margin-top: 10px;
+    padding: 22px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(108, 99, 255, 0.07),
+            transparent 48%
+        ),
+        rgba(10, 10, 15, 0.38);
+
+    border: 1px solid rgba(108, 99, 255, 0.15);
+    border-radius: var(--radius-medium);
+}
+
+#mentorBookingDetails h3,
+#menteeBookingDetails h3 {
+    margin-bottom: 16px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-size: 1rem;
+}
+
+#mentorBookingDetails h3::before,
+#menteeBookingDetails h3::before {
+    content: "";
+
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: var(--accent);
+
+    box-shadow: 0 0 12px rgba(108, 99, 255, 0.7);
+}
+
+#mentorBookingDetails p,
+#menteeBookingDetails p {
+    min-height: 46px;
+    padding: 11px 13px;
+    margin-bottom: 9px;
+
+    display: grid;
+    grid-template-columns: 145px 1fr;
+    align-items: center;
+    gap: 12px;
+
+    color: var(--muted);
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 10px;
+
+    font-size: 0.82rem;
+}
+
+#mentorBookingDetails p:last-child,
+#menteeBookingDetails p:last-child {
+    margin-bottom: 0;
+}
+
+#mentorBookingDetails p span,
+#menteeBookingDetails p span {
+    color: var(--text-soft);
+    font-weight: 500;
+
+    overflow-wrap: anywhere;
+}
+
+#menteeBookingDetails > hr {
+    height: 1px;
+
+    margin: 22px 0;
+
+    border: 0;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.12),
+        transparent
+    );
+}
+
+#resumeFile {
+    width: 100%;
+    min-height: 48px;
+
+    margin-bottom: 12px;
+    padding: 7px;
+
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.035);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 11px;
+
+    cursor: pointer;
+}
+
+#resumeFile::file-selector-button {
+    min-height: 34px;
+    margin-right: 12px;
+    padding: 7px 13px;
+
+    border: 1px solid rgba(108, 99, 255, 0.28);
+    border-radius: 8px;
+
+    color: #d4d2ff;
+    background: var(--accent-soft);
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+#resumeFile::file-selector-button:hover {
+    color: #ffffff;
+    background: rgba(108, 99, 255, 0.22);
+}
+
+#uploadResumeBtn {
+    min-height: 44px;
+    padding: 10px 18px;
+    margin-bottom: 12px;
+
+    border: 1px solid rgba(108, 99, 255, 0.38);
+    border-radius: 10px;
+
+    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        #8179ff
+    );
+
+    font-size: 0.86rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow: 0 10px 24px rgba(108, 99, 255, 0.18);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.2s ease;
+}
+
+#uploadResumeBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(108, 99, 255, 0.28);
+}
+
+@media (max-width: 600px) {
+    #mentorBookingDetails,
+    #menteeBookingDetails {
+        padding: 17px;
+    }
+
+    #mentorBookingDetails p,
+    #menteeBookingDetails p {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+
+    #uploadResumeBtn {
+        width: 100%;
+    }
+}
+
+/* ========================================
+   PART 7 — UPCOMING BOOKINGS
+======================================== */
+
+#dashboardContent > section:nth-of-type(3) {
+    margin-bottom: 24px;
+    padding: 28px;
+
+    background: rgba(20, 20, 31, 0.92);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#dashboardContent > section:nth-of-type(3) > h2 {
+    margin-bottom: 20px;
+}
+
+#dashboardContent > section:nth-of-type(3) > h2::after {
+    content: "";
+
+    width: 44px;
+    height: 3px;
+
+    display: block;
+    margin-top: 9px;
+
+    border-radius: 999px;
+    background: var(--accent);
+}
+
+#upcomingBookings {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+#upcomingBookings > p {
+    grid-column: 1 / -1;
+
+    min-height: 120px;
+    padding: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--muted);
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+}
+
+#upcomingBookings > div {
+    padding: 18px;
+
+    background: rgba(255, 255, 255, 0.027);
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 14px;
+
+    transition:
+        transform 0.18s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+#upcomingBookings > div:hover {
+    transform: translateY(-2px);
+
+    background: rgba(255, 255, 255, 0.043);
+    border-color: rgba(108, 99, 255, 0.2);
+}
+
+#upcomingBookings > div hr {
+    display: none;
+}
+
+#upcomingBookings > div p {
+    margin-bottom: 8px;
+
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+#upcomingBookings > div p:last-child {
+    margin-bottom: 0;
+}
+
+#upcomingBookings strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+@media (max-width: 700px) {
+    #dashboardContent > section:nth-of-type(3) {
+        padding: 22px 18px;
+    }
+
+    #upcomingBookings {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========================================
+   PART 7 — UPCOMING BOOKINGS
+======================================== */
+
+#dashboardContent > section:nth-of-type(3) {
+    margin-bottom: 24px;
+    padding: 28px;
+
+    background: rgba(20, 20, 31, 0.92);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#dashboardContent > section:nth-of-type(3) > h2 {
+    margin-bottom: 20px;
+}
+
+#dashboardContent > section:nth-of-type(3) > h2::after {
+    content: "";
+
+    width: 44px;
+    height: 3px;
+
+    display: block;
+    margin-top: 9px;
+
+    border-radius: 999px;
+    background: var(--accent);
+}
+
+#upcomingBookings {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+#upcomingBookings > p {
+    grid-column: 1 / -1;
+
+    min-height: 120px;
+    padding: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--muted);
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+}
+
+#upcomingBookings > div {
+    padding: 18px;
+
+    background: rgba(255, 255, 255, 0.027);
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 14px;
+
+    transition:
+        transform 0.18s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+#upcomingBookings > div:hover {
+    transform: translateY(-2px);
+
+    background: rgba(255, 255, 255, 0.043);
+    border-color: rgba(108, 99, 255, 0.2);
+}
+
+#upcomingBookings > div hr {
+    display: none;
+}
+
+#upcomingBookings > div p {
+    margin-bottom: 8px;
+
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+#upcomingBookings > div p:last-child {
+    margin-bottom: 0;
+}
+
+#upcomingBookings strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+@media (max-width: 700px) {
+    #dashboardContent > section:nth-of-type(3) {
+        padding: 22px 18px;
+    }
+
+    #upcomingBookings {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========================================
+   PART 8 — FRIENDS SECTION
+======================================== */
+
+#dashboardContent > section:nth-of-type(4) {
+    margin-bottom: 24px;
+    padding: 28px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(72, 199, 142, 0.055),
+            transparent 45%
+        ),
+        rgba(20, 20, 31, 0.92);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#dashboardContent > section:nth-of-type(4) > h2 {
+    margin-bottom: 8px;
+}
+
+#dashboardContent > section:nth-of-type(4) > p {
+    margin-bottom: 18px;
+
+    color: var(--muted);
+}
+
+#friendsCount {
+    margin-left: 6px;
+
+    color: #8be7bb;
+    font-size: 1rem;
+}
+
+#friendsPreview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+
+    margin-bottom: 18px;
+}
+
+#friendsPreview > p {
+    grid-column: 1 / -1;
+
+    padding: 22px;
+
+    text-align: center;
+    color: var(--muted);
+
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+#friendsPreview > div {
+    min-height: 86px;
+    padding: 14px;
+
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    column-gap: 12px;
+    align-items: center;
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 13px;
+
+    transition:
+        transform 0.18s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+#friendsPreview > div:hover {
+    transform: translateY(-2px);
+
+    background: rgba(255, 255, 255, 0.043);
+    border-color: rgba(72, 199, 142, 0.18);
+}
+
+#friendsPreview img {
+    width: 50px;
+    height: 50px;
+
+    grid-row: 1 / span 3;
+
+    object-fit: cover;
+
+    border-radius: 14px;
+    border: 2px solid rgba(72, 199, 142, 0.2);
+}
+
+#friendsPreview > div p {
+    margin: 0;
+
+    color: var(--muted);
+    font-size: 0.78rem;
+
+    overflow-wrap: anywhere;
+}
+
+#friendsPreview > div p strong {
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+#friendsPreview hr {
+    display: none;
+}
+
+#dashboardContent > section:nth-of-type(4) > a {
+    min-height: 42px;
+    padding: 10px 16px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(72, 199, 142, 0.22);
+    border-radius: 10px;
+
+    color: #8be7bb;
+    background: rgba(72, 199, 142, 0.07);
+
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    transition:
+        transform 0.18s ease,
+        background 0.2s ease;
+}
+
+#dashboardContent > section:nth-of-type(4) > a:hover {
+    transform: translateY(-2px);
+    background: rgba(72, 199, 142, 0.14);
+}
+
+@media (max-width: 700px) {
+    #dashboardContent > section:nth-of-type(4) {
+        padding: 22px 18px;
+    }
+
+    #friendsPreview {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========================================
+   PART 9 — PENDING FRIEND REQUESTS
+======================================== */
+
+#dashboardContent > section:nth-of-type(5) {
+    margin-bottom: 24px;
+    padding: 28px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(251, 191, 36, 0.05),
+            transparent 45%
+        ),
+        rgba(20, 20, 31, 0.92);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#dashboardContent > section:nth-of-type(5) > h2 {
+    margin-bottom: 8px;
+}
+
+#dashboardContent > section:nth-of-type(5) > p {
+    margin-bottom: 18px;
+
+    color: var(--muted);
+}
+
+#pendingFriendsCount {
+    margin-left: 6px;
+
+    color: var(--warning);
+}
+
+#pendingFriends {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+#pendingFriends > p {
+    grid-column: 1 / -1;
+
+    padding: 22px;
+
+    text-align: center;
+    color: var(--muted);
+
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+#pendingFriends > div {
+    padding: 15px;
+
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    column-gap: 12px;
+    row-gap: 6px;
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 13px;
+}
+
+#pendingFriends img {
+    width: 50px;
+    height: 50px;
+
+    grid-row: 1 / span 3;
+
+    object-fit: cover;
+
+    border-radius: 14px;
+    border: 2px solid rgba(251, 191, 36, 0.2);
+}
+
+#pendingFriends p {
+    margin: 0;
+
+    color: var(--muted);
+    font-size: 0.78rem;
+
+    overflow-wrap: anywhere;
+}
+
+#pendingFriends p strong {
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+#pendingFriends button {
+    min-height: 36px;
+    padding: 8px 13px;
+
+    border-radius: 9px;
+
+    font-size: 0.78rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.18s ease,
+        background 0.2s ease;
+}
+
+#pendingFriends button:first-of-type {
+    grid-column: 1 / 2;
+
+    color: #8be7bb;
+    background: rgba(72, 199, 142, 0.09);
+    border: 1px solid rgba(72, 199, 142, 0.2);
+}
+
+#pendingFriends button:nth-of-type(2) {
+    grid-column: 2 / 3;
+
+    color: #ff9caf;
+    background: rgba(255, 101, 132, 0.08);
+    border: 1px solid rgba(255, 101, 132, 0.2);
+}
+
+#pendingFriends button:hover {
+    transform: translateY(-1px);
+}
+
+#pendingFriends button:first-of-type:hover {
+    background: rgba(72, 199, 142, 0.16);
+}
+
+#pendingFriends button:nth-of-type(2):hover {
+    background: rgba(255, 101, 132, 0.16);
+}
+
+#pendingFriends hr {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    #dashboardContent > section:nth-of-type(5) {
+        padding: 22px 18px;
+    }
+
+    #pendingFriends {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========================================
+   PART 10 — MENTOR AVAILABILITY
+======================================== */
+
+#mentorAvailabilitySection {
+    margin-bottom: 24px;
+    padding: 28px;
+
+    overflow: hidden;
+
+    background: rgba(20, 20, 31, 0.92);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#mentorAvailabilitySection h2 {
+    margin-bottom: 14px;
+}
+
+#mentorAvailabilitySection > p {
+    margin-bottom: 7px;
+
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+#totalAvailability,
+#activeAvailabilityCount {
+    margin-left: 5px;
+
+    color: var(--text);
+    font-weight: 600;
+}
+
+#activeAvailabilityCount {
+    color: #8be7bb;
+}
+
+#mentorAvailabilitySection table {
+    width: 100%;
+
+    margin-top: 20px;
+
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 13px;
+
+    background: rgba(255, 255, 255, 0.018);
+}
+
+#mentorAvailabilitySection th,
+#mentorAvailabilitySection td {
+    padding: 13px 14px;
+
+    text-align: left;
+
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+#mentorAvailabilitySection th {
+    color: var(--text-soft);
+    background: rgba(108, 99, 255, 0.09);
+
+    font-size: 0.76rem;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+#mentorAvailabilitySection td {
+    color: var(--muted);
+    font-size: 0.84rem;
+}
+
+#mentorAvailabilitySection tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+#mentorAvailabilitySection tbody tr {
+    transition: background 0.18s ease;
+}
+
+#mentorAvailabilitySection tbody tr:hover {
+    background: rgba(255, 255, 255, 0.035);
+}
+
+@media (max-width: 800px) {
+    #mentorAvailabilitySection {
+        padding: 22px 18px;
+
+        overflow-x: auto;
+    }
+
+    #mentorAvailabilitySection table {
+        min-width: 680px;
+    }
+}
+
+/* ========================================
+   PART 11 — MENTEE ACTIONS
+======================================== */
+
+#menteeActionsSection {
+    margin-bottom: 24px;
+    padding: 30px;
+
+    position: relative;
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(108, 99, 255, 0.13),
+            rgba(255, 101, 132, 0.05)
+        ),
+        rgba(20, 20, 31, 0.94);
+
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        var(--shadow-card),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+#menteeActionsSection::after {
+    content: "✦";
+
+    position: absolute;
+    right: 28px;
+    top: 22px;
+
+    color: rgba(255, 255, 255, 0.12);
+
+    font-size: 4.5rem;
+    line-height: 1;
+
+    pointer-events: none;
+}
+
+#menteeActionsSection h2 {
+    margin-bottom: 10px;
+}
+
+#menteeActionsSection p {
+    max-width: 680px;
+    margin-bottom: 20px;
+
+    color: var(--text-soft);
+}
+
+#bookMentorBtn {
+    min-height: 46px;
+    padding: 11px 20px;
+
+    border: 1px solid rgba(108, 99, 255, 0.4);
+    border-radius: 11px;
+
+    color: #ffffff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        #8179ff
+    );
+
+    font-size: 0.88rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow: 0 12px 28px rgba(108, 99, 255, 0.23);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.2s ease;
+}
+
+#bookMentorBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(108, 99, 255, 0.32);
+}
+
+@media (max-width: 600px) {
+    #menteeActionsSection {
+        padding: 22px 18px;
+    }
+
+    #menteeActionsSection::after {
+        right: 14px;
+        top: 16px;
+
+        font-size: 3.5rem;
+    }
+
+    #bookMentorBtn {
+        width: 100%;
+    }
+}
+
+/* ========================================
+   PART 12 — FINAL SHARED POLISH
+======================================== */
+
+button:disabled,
+input:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+img {
+    max-width: 100%;
+}
+
+::selection {
+    color: #ffffff;
+    background: rgba(108, 99, 255, 0.55);
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #29293b;
+    border: 2px solid var(--bg);
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #39394f;
+}
+
+#dashboardContent > section {
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+#dashboardContent > section:hover {
+    border-color: rgba(108, 99, 255, 0.17);
+
+    box-shadow:
+        0 22px 54px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+@media (max-width: 600px) {
+    #dashboardContent > section {
+        margin-bottom: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

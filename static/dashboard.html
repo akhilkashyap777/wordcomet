@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WordComet Dashboard</title>
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
 
@@ -71,7 +72,17 @@
                     <p>Average rating: <span id="mentorRating">-</span></p>
                     <p>Rating count: <span id="mentorRatingCount">-</span></p>
                     <p>Resume uploaded: <span id="menteeResumeStatus">-</span></p>
+                    <hr>
+
+                    <h3>Upload Resume</h3>
+
+                    <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
+
+                    <button id="uploadResumeBtn" type="button">
+                        Upload Resume
+                    </button>
                     <p>Resume filename: <span id="menteeResumeFilename">-</span></p>
+                    
                 </div>
 
                 <button id="joinSessionBtn" type="button">Join Session</button>
@@ -80,6 +91,16 @@
         </section>
 
         <hr>
+
+
+
+        <section>
+            <h2>Upcoming Bookings</h2>
+
+            <div id="upcomingBookings">
+                <p>No upcoming bookings.</p>
+            </div>
+        </section>
                 </section>
 
         <hr>
@@ -612,8 +633,9 @@
             );
 
             await Promise.all([
+                loadCurrentBooking(),
+                loadUpcomingBookings(),
                 loadPendingFriendRequests(),
-                loadFriendsPreview(),
                 loadFriendsPreview(),
                 loadPendingFriendRequests()
             ]);
@@ -660,6 +682,87 @@
             setError(error.message || "Could not load dashboard.");
         } finally {
             loadingMessage.hidden = true;
+        }
+    }
+
+    async function loadUpcomingBookings() {
+        const container = document.getElementById("upcomingBookings");
+
+        container.innerHTML = "<p>Loading...</p>";
+
+        try {
+            const data = await api("/mentor/bookings/all");
+
+            const bookings = data.bookings?.upcoming || [];
+
+            if (bookings.length === 0) {
+                container.innerHTML = "<p>No upcoming bookings.</p>";
+                return;
+            }
+
+            container.innerHTML = "";
+
+            bookings.forEach(booking => {
+                const div = document.createElement("div");
+
+                const participant =
+                    profileData.role === "mentor"
+                        ? booking.participant_name
+                        : booking.participant_name;
+
+                div.innerHTML = `
+                    <hr>
+                    <p><strong>Booking ID:</strong> ${booking.id}</p>
+                    <p><strong>Date:</strong> ${booking.session_date}</p>
+                    <p><strong>Time:</strong> ${formatTime(booking.start_time)} - ${formatTime(booking.end_time)}</p>
+                    <p><strong>${profileData.role === "mentor" ? "Student" : "Mentor"}:</strong> ${participant}</p>
+                `;
+
+                container.appendChild(div);
+            });
+
+        } catch (err) {
+            container.innerHTML = "<p>Could not load upcoming bookings.</p>";
+        }
+    }
+
+    async function uploadResume() {
+
+        if (!activeBookingData?.id) {
+            alert("No active booking.");
+            return;
+        }
+
+        const file =
+            document.getElementById("resumeFile").files[0];
+
+        if (!file) {
+            alert("Choose a resume first.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("resume", file);
+
+        try {
+
+            await api(
+                `/mentor/bookings/${activeBookingData.id}/resume`,
+                {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        Authorization: `Bearer ${idToken}`
+                    }
+                }
+            );
+
+            alert("Resume uploaded.");
+
+            await loadBookingDetails(activeBookingData.id);
+
+        } catch (err) {
+            alert(err.message);
         }
     }
 
@@ -742,6 +845,10 @@
     document.getElementById("joinSessionBtn").addEventListener(
         "click",
         joinActiveSession
+    );
+    document.getElementById("uploadResumeBtn").addEventListener(
+        "click",
+        uploadResume
     );
 
     document.getElementById("cancelBookingBtn").addEventListener(

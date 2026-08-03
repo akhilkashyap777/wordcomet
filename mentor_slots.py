@@ -1150,3 +1150,253 @@ def get_mentors_by_domain(
 
     finally:
         conn.close()
+
+@router.get("/bydate")
+def get_mentors_by_date(
+    session_date: date = Query(...),
+):
+    """
+    Return mentors who have at least one available slot
+    on the selected date.
+
+    Example:
+    GET /mentor/bydate?session_date=2026-08-05
+    """
+
+    designations = {
+        "Software Development": [
+            "Flutter Developer",
+            "Android Developer",
+            "iOS Developer",
+            "Frontend Developer",
+            "Backend Developer",
+            "Full Stack Developer",
+        ],
+        "Data Science and AI": [
+            "Machine Learning Engineer",
+            "Data Scientist",
+            "AI Engineer",
+            "Data Analyst",
+        ],
+    }
+
+    if session_date < date.today():
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot search mentors for a past date.",
+        )
+
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        # Get all active availability ranges for the selected date,
+        # together with mentor profile details.
+        cur.execute(
+            """
+            SELECT
+                ma.id AS availability_id,
+                ma.mentor_id,
+                ma.availability_date,
+                ma.start_time AS availability_start_time,
+                ma.end_time AS availability_end_time,
+                ma.slot_duration_minutes,
+
+                u.firebase_uid,
+                u.display_name,
+                u.full_name,
+                u.profile_picture_url,
+                u.bio,
+                u.designation,
+                u.experience_years,
+                u.experience_months,
+                u.average_rating,
+                u.rating_count
+
+            FROM mentor_availability ma
+
+            JOIN users u
+                ON u.id = ma.mentor_id
+
+            WHERE ma.availability_date = %s
+              AND ma.is_active = TRUE
+              AND u.role = 'mentor'
+              AND u.is_active = TRUE
+
+            ORDER BY
+                u.average_rating DESC,
+                u.rating_count DESC,
+                ma.start_time ASC
+            """,
+            (session_date,),
+        )
+
+        availability_rows = cur.fetchall()
+
+        if not availability_rows:
+            return {
+                "status": "ok",
+                "session_date": session_date.isoformat(),
+                "mentor_count": 0,
+                "mentors": [],
+            }
+
+        mentor_ids = list({
+            row["mentor_id"]
+            for row in availability_rows
+        })
+
+        # Get all booked slots for these mentors on the selected date.
+        cur.execute(
+            """
+            SELECT
+                mentor_id,
+                start_time,
+                end_time
+
+            FROM mentor_bookings
+
+            WHERE mentor_id = ANY(%s)
+              AND session_date = %s
+              AND status = 'booked'
+            """,
+            (mentor_ids, session_date),
+        )
+
+        booked_rows = cur.fetchall()
+
+        booked_slots = {}
+
+        for row in booked_rows:
+            mentor_id = row["mentor_id"]
+
+            if mentor_id not in booked_slots:
+                booked_slots[mentor_id] = set()
+
+            booked_slots[mentor_id].add(
+                (
+                    row["start_time"].strftime("%H:%M"),
+                    row["end_time"].strftime("%H:%M"),
+                )
+            )
+
+        mentors_map = {}
+        now = datetime.utcnow()
+
+        for row in availability_rows:
+            mentor_id = row["mentor_id"]
+
+            if mentor_id not in mentors_map:
+                mentor_domain = None
+
+                for domain_name, domain_designations in designations.items():
+                    if row["designation"] in domain_designations:
+                        mentor_domain = domain_name
+                        break
+
+                mentors_map[mentor_id] = {
+                    "id": mentor_id,
+                    "firebase_uid": row["firebase_uid"],
+                    "display_name": row["display_name"],
+                    "full_name": row["full_name"],
+                    "profile_picture_url": row["profile_picture_url"],
+                    "bio": row["bio"],
+                    "domain": mentor_domain,
+                    "designation": row["designation"],
+                    "experience_years": row["experience_years"],
+                    "experience_months": row["experience_months"],
+                    "average_rating": row["average_rating"],
+                    "rating_count": row["rating_count"],
+                    "availability": [],
+                    "available_slots": [],
+                }
+
+            availability = {
+                "id": row["availability_id"],
+                "mentor_id": row["mentor_id"],
+                "start_time": row["availability_start_time"],
+                "end_time": row["availability_end_time"],
+                "slot_duration_minutes": row["slot_duration_minutes"],
+            }
+
+            mentors_map[mentor_id]["availability"].append({
+                "availability_id": row["availability_id"],
+                "start_time": row["availability_start_time"].strftime("%H:%M"),
+                "end_time": row["availability_end_time"].strftime("%H:%M"),
+                "slot_duration_minutes": row["slot_duration_minutes"],
+            })
+
+            generated_slots = generate_slots_for_date(
+                availability,
+                session_date,
+            )
+
+            mentor_booked_slots = booked_slots.get(
+                mentor_id,
+                set(),
+            )
+
+            for slot in generated_slots:
+                slot_key = (
+                    slot["start_time"],
+                    slot["end_time"],
+                )
+
+                slot_start = datetime.combine(
+                    session_date,
+                    parse_hhmm(slot["start_time"]),
+                )
+
+                is_booked = slot_key in mentor_booked_slots
+                is_past = slot_start <= now
+
+                if is_booked or is_past:
+                    continue
+
+                mentors_map[mentor_id]["available_slots"].append({
+                    "availability_id": slot["availability_id"],
+                    "session_date": slot["session_date"],
+                    "start_time": slot["start_time"],
+                    "end_time": slot["end_time"],
+                    "duration": row["slot_duration_minutes"],
+                    "can_book": True,
+                })
+
+        # Only return mentors who still have at least one bookable slot.
+        mentors = []
+
+        for mentor in mentors_map.values():
+            mentor["available_slot_count"] = len(
+                mentor["available_slots"]
+            )
+
+            if mentor["available_slot_count"] > 0:
+                mentors.append(mentor)
+
+        mentors.sort(
+            key=lambda mentor: (
+                -(float(mentor["average_rating"] or 0)),
+                -(mentor["rating_count"] or 0),
+                mentor["id"],
+            )
+        )
+
+        return {
+            "status": "ok",
+            "session_date": session_date.isoformat(),
+            "mentor_count": len(mentors),
+            "mentors": mentors,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not load mentors by date: {str(e)}",
+        )
+
+    finally:
+        conn.close()
