@@ -130,6 +130,23 @@ class BookSlotBody(BaseModel):
 
 VALID_DAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
 
+DOMAIN_DESIGNATIONS = {
+    "Software Development": [
+        "Flutter Developer",
+        "Android Developer",
+        "iOS Developer",
+        "Frontend Developer",
+        "Backend Developer",
+        "Full Stack Developer",
+    ],
+    "Data Science and AI": [
+        "Machine Learning Engineer",
+        "Data Scientist",
+        "AI Engineer",
+        "Data Analyst",
+    ],
+}
+
 
 # ─── Time Helpers ────────────────────────────────────────────────────
 
@@ -1153,24 +1170,8 @@ def get_mentors_by_domain(
     domain: str = Query(...),
     designation: Optional[str] = Query(None),
 ):
-    designations = {
-        "Software Development": [
-            "Flutter Developer",
-            "Android Developer",
-            "iOS Developer",
-            "Frontend Developer",
-            "Backend Developer",
-            "Full Stack Developer",
-        ],
-        "Data Science and AI": [
-            "Machine Learning Engineer",
-            "Data Scientist",
-            "AI Engineer",
-            "Data Analyst",
-        ],
-    }
 
-    domain_designations = designations.get(domain)
+    domain_designations = DOMAIN_DESIGNATIONS.get(domain)
 
     if not domain_designations:
         raise HTTPException(
@@ -1241,22 +1242,7 @@ def get_mentors_by_date(
     GET /mentor/bydate?session_date=2026-08-05
     """
 
-    designations = {
-        "Software Development": [
-            "Flutter Developer",
-            "Android Developer",
-            "iOS Developer",
-            "Frontend Developer",
-            "Backend Developer",
-            "Full Stack Developer",
-        ],
-        "Data Science and AI": [
-            "Machine Learning Engineer",
-            "Data Scientist",
-            "AI Engineer",
-            "Data Analyst",
-        ],
-    }
+    designations = DOMAIN_DESIGNATIONS
 
     if session_date < date.today():
         raise HTTPException(
@@ -1478,3 +1464,18 @@ def get_mentors_by_date(
 
     finally:
         conn.close()
+
+@router.get("/domains")
+def get_domains():
+    return {
+        "status": "ok",
+        "domain_count": len(DOMAIN_DESIGNATIONS),
+        "domains": [
+            {
+                "name": domain,
+                "designation_count": len(designations),
+                "designations": designations,
+            }
+            for domain, designations in DOMAIN_DESIGNATIONS.items()
+        ],
+    }

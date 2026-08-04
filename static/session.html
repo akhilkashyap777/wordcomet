@@ -150,6 +150,35 @@
 
         </section>
 
+        <section class="chat-panel">
+
+            <h2>Chat</h2>
+
+            <div id="chatMessages"></div>
+
+            <div class="chat-input-row">
+
+                <input
+                    type="text"
+                    id="chatInput"
+                    placeholder="Type a message..."
+                >
+
+                <button
+                    id="sendChatBtn"
+                    type="button">
+                    Send
+                </button>
+
+                <input
+                    type="file"
+                    id="chatFileInput"
+                >
+
+            </div>
+
+        </section>
+
     </main>
 
 </div>
@@ -193,6 +222,10 @@ let localVideo = document.getElementById("localVideo");
 let remoteVideo = document.getElementById("remoteVideo");
 
 const muteBtn = document.getElementById("muteBtn");
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const sendChatBtn = document.getElementById("sendChatBtn");
+const chatFileInput = document.getElementById("chatFileInput");
 const cameraBtn = document.getElementById("cameraBtn");
 const screenShareBtn = document.getElementById("screenShareBtn");
 const fullscreenBtn = document.getElementById("fullscreenBtn");
@@ -414,6 +447,18 @@ function connectWebSocket() {
 
                 break;
 
+            case "chat":
+
+                chatMessages.innerHTML += `
+                    <div>
+                        <strong>Peer:</strong> ${message.message}
+                    </div>
+                `;
+
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                break;
+
             case "error":
 
                 console.log(message.message);
@@ -599,6 +644,27 @@ endCallBtn.addEventListener("click", () => {
     muteBtn.classList.remove("control-btn-off");
     cameraBtn.classList.remove("control-btn-off");
     screenShareBtn.classList.remove("control-btn-off");
+});
+
+sendChatBtn.addEventListener("click", () => {
+
+    if (!chatInput.value.trim()) return;
+
+    websocket.send(JSON.stringify({
+        type: "chat",
+        message: chatInput.value
+    }));
+
+    chatMessages.innerHTML += `
+        <div>
+            <strong>You:</strong> ${chatInput.value}
+        </div>
+    `;
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    chatInput.value = "";
+
 });
 
 // start();
