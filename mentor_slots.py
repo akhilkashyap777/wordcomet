@@ -1465,15 +1465,26 @@ def get_mentors_by_date(
     finally:
         conn.close()
 
+# @router.get("/domains")
+# def get_domains():
+#     return {
+#         "status": "ok",
+#         "domain_count": len(DOMAIN_DESIGNATIONS),
+#         "domains": [
+#             {
+#                 "designations": designations,
+#             }
+#             for domain, designations in DOMAIN_DESIGNATIONS.items()
+#         ],
+#     }
+
 @router.get("/domains")
-def get_domains():
+def get_designations():
     return {
         "status": "ok",
-        "domain_count": len(DOMAIN_DESIGNATIONS),
-        "domains": [
-            {
-                "designations": designations,
-            }
-            for domain, designations in DOMAIN_DESIGNATIONS.items()
-        ],
+        "designations": [
+            designation
+            for designation_list in DOMAIN_DESIGNATIONS.values()
+            for designation in designation_list
+        ]
     }
