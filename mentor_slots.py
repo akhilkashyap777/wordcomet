@@ -145,6 +145,10 @@ DOMAIN_DESIGNATIONS = {
         "AI Engineer",
         "Data Analyst",
     ],
+    "Non Techinical":[
+        "UI/UX Design",
+        "Product Management",
+    ]
 }
 
 
@@ -1480,17 +1484,7 @@ def get_mentors_by_date(
 
 @router.get("/domains")
 def get_designations():
-    designations = [
-        designation
-        for designation_list in DOMAIN_DESIGNATIONS.values()
-        for designation in designation_list
-    ]
-
     return {
         "status": "ok",
-        "domains": [
-            {
-                "designations": designations
-            }
-        ]
+        "domains": list(DOMAIN_DESIGNATIONS.keys())
     }
