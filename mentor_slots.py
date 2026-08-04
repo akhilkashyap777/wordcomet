@@ -1472,8 +1472,6 @@ def get_domains():
         "domain_count": len(DOMAIN_DESIGNATIONS),
         "domains": [
             {
-                "name": domain,
-                "designation_count": len(designations),
                 "designations": designations,
             }
             for domain, designations in DOMAIN_DESIGNATIONS.items()
