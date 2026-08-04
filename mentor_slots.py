@@ -130,26 +130,20 @@ class BookSlotBody(BaseModel):
 
 VALID_DAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
 
-DOMAIN_DESIGNATIONS = {
-    "Software Development": [
-        "Flutter Developer",
-        "Android Developer",
-        "iOS Developer",
-        "Frontend Developer",
-        "Backend Developer",
-        "Full Stack Developer",
-    ],
-    "Data Science and AI": [
-        "Machine Learning Engineer",
-        "Data Scientist",
-        "AI Engineer",
-        "Data Analyst",
-    ],
-    "Non Techinical":[
-        "UI/UX Design",
-        "Product Management",
-    ]
-}
+DESIGNATIONS = [
+    "Software Development",
+    "Frontend Development",
+    "Backend Development",
+    "Full Stack Development",
+    "Mobile App Development",
+    "Cloud Computing",
+    "DevOps",
+    "Data Science & AI",
+    "Cyber Security",
+    "Quality Assurance (QA)",
+    "UI/UX Design",
+    "Product Management"
+]
 
 
 # ─── Time Helpers ────────────────────────────────────────────────────
@@ -1169,30 +1163,15 @@ def get_all_my_bookings(
     finally:
         conn.close()
 
-@router.get("/bydomain")
-def get_mentors_by_domain(
-    domain: str = Query(...),
-    designation: Optional[str] = Query(None),
+@router.get("/bydesignation")
+def get_mentors_by_designation(
+    designation: str = Query(...),
 ):
-
-    domain_designations = DOMAIN_DESIGNATIONS.get(domain)
-
-    if not domain_designations:
+    if designation not in DESIGNATIONS:
         raise HTTPException(
             status_code=404,
-            detail="Domain not found.",
+            detail="Designation not found.",
         )
-
-    if designation:
-        if designation not in domain_designations:
-            raise HTTPException(
-                status_code=400,
-                detail=f"'{designation}' does not belong to '{domain}'.",
-            )
-
-        selected_designations = [designation]
-    else:
-        selected_designations = domain_designations
 
     conn = get_db()
 
@@ -1215,17 +1194,17 @@ def get_mentors_by_domain(
                 rating_count
             FROM users
             WHERE role = 'mentor'
-              AND designation = ANY(%s)
-            ORDER BY average_rating DESC, rating_count DESC, id ASC;
+              AND is_active = TRUE
+              AND designation = %s
+            ORDER BY average_rating DESC, rating_count DESC, id ASC
             """,
-            (selected_designations,),
+            (designation,),
         )
 
         mentors = [dict(row) for row in cur.fetchall()]
 
         return {
             "status": "ok",
-            "domain": domain,
             "designation": designation,
             "mentor_count": len(mentors),
             "mentors": mentors,
@@ -1245,8 +1224,6 @@ def get_mentors_by_date(
     Example:
     GET /mentor/bydate?session_date=2026-08-05
     """
-
-    designations = DOMAIN_DESIGNATIONS
 
     if session_date < date.today():
         raise HTTPException(
@@ -1356,12 +1333,6 @@ def get_mentors_by_date(
             mentor_id = row["mentor_id"]
 
             if mentor_id not in mentors_map:
-                mentor_domain = None
-
-                for domain_name, domain_designations in designations.items():
-                    if row["designation"] in domain_designations:
-                        mentor_domain = domain_name
-                        break
 
                 mentors_map[mentor_id] = {
                     "id": mentor_id,
@@ -1370,7 +1341,6 @@ def get_mentors_by_date(
                     "full_name": row["full_name"],
                     "profile_picture_url": row["profile_picture_url"],
                     "bio": row["bio"],
-                    "domain": mentor_domain,
                     "designation": row["designation"],
                     "experience_years": row["experience_years"],
                     "experience_months": row["experience_months"],
@@ -1482,9 +1452,9 @@ def get_mentors_by_date(
 #         ],
 #     }
 
-@router.get("/domains")
+@router.get("/designations")
 def get_designations():
     return {
         "status": "ok",
-        "domains": list(DOMAIN_DESIGNATIONS.keys())
+        "designations": DESIGNATIONS,
     }
