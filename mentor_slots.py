@@ -1480,11 +1480,17 @@ def get_mentors_by_date(
 
 @router.get("/domains")
 def get_designations():
+    designations = [
+        designation
+        for designation_list in DOMAIN_DESIGNATIONS.values()
+        for designation in designation_list
+    ]
+
     return {
         "status": "ok",
-        "designations": [
-            designation
-            for designation_list in DOMAIN_DESIGNATIONS.values()
-            for designation in designation_list
+        "domains": [
+            {
+                "designations": designations
+            }
         ]
     }
