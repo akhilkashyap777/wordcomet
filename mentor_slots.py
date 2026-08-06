@@ -1472,5 +1472,5 @@ def get_mentors_by_date(
 def get_designations():
     return {
         "status": "ok",
-        "designations": DESIGNATIONS,
+        "domains": DESIGNATIONS,
     }
