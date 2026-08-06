@@ -1468,7 +1468,7 @@ def get_mentors_by_date(
 #         ],
 #     }
 
-@router.get("/designations")
+@router.get("/designations/List")
 def get_designations():
     return {
         "status": "ok",
