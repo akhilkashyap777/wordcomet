@@ -41,7 +41,7 @@ bearer_scheme = HTTPBearer()
 JOIN_GRACE_MINUTES = int(os.environ.get("MENTOR_CALL_JOIN_GRACE_MINUTES", "5"))
 END_GRACE_MINUTES = int(os.environ.get("MENTOR_CALL_END_GRACE_MINUTES", "0"))
 
-
+PUBLIC_R2_URL = "https://pub-1d52713b8d67432eb2e7800bd9e02e11.r2.dev"
 # ─── DB Connection ───────────────────────────────────────────────────
 
 def get_db():
@@ -896,6 +896,11 @@ def mentor_get_student_booking_details(
 
             "resume": {
                 "resume_key": row["resume_key"],
+                "resume_url": (
+                    f"{PUBLIC_R2_URL}/{row['resume_key']}"
+                    if row["resume_key"]
+                    else None
+                ),
                 "filename": row["resume_filename"],
                 "uploaded_at": row["resume_uploaded_at"],
                 "is_uploaded": row["resume_key"] is not None,
@@ -976,6 +981,11 @@ def mentee_get_mentor_booking_details(
 
             "resume": {
                 "resume_key": row["resume_key"],
+                "resume_url": (
+                    f"{PUBLIC_R2_URL}/{row['resume_key']}"
+                    if row["resume_key"]
+                    else None
+                ),
                 "filename": row["resume_filename"],
                 "uploaded_at": row["resume_uploaded_at"],
                 "is_uploaded": row["resume_key"] is not None,
