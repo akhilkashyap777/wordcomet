@@ -1084,6 +1084,12 @@ def get_all_my_bookings(
         for row in rows:
             booking = dict(row)
 
+            booking["resume_url"] = (
+                f"{PUBLIC_R2_URL}/{booking['resume_key']}"
+                if booking.get("resume_key")
+                else None
+            )
+
             session_start = datetime.combine(
                 booking["session_date"],
                 booking["start_time"],
