@@ -1179,7 +1179,7 @@ def get_all_my_bookings(
     finally:
         conn.close()
 
-@router.get("/bydesignation")
+@router.get("/bydomain")
 def get_mentors_by_designation(
     designation: str = Query(...),
 ):
