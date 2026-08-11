@@ -56,19 +56,92 @@
     <!-- ===================================================== -->
     <div id="mentorSection" style="display:none;">
 
+        <h2>Mentor Profile</h2>
+
+        <div id="mentorProfileForm">
+
+            <div>
+                <label for="mentorFullName">Full Name</label>
+                <input
+                    type="text"
+                    id="mentorFullName"
+                    placeholder="Enter your full name"
+                >
+            </div>
+
+            <br>
+
+            <div>
+                <label for="mentorDesignation">Domain / Designation</label>
+
+                <select id="mentorDesignation">
+                    <option value="">Select Domain</option>
+                </select>
+            </div>
+
+            <br>
+
+            <div>
+                <label for="mentorExperienceYears">Years of Experience</label>
+                <input
+                    type="number"
+                    id="mentorExperienceYears"
+                    placeholder="Example: 3"
+                    min="0"
+                >
+            </div>
+
+            <br>
+
+            <div>
+                <label for="mentorExperienceMonths">Additional Months</label>
+                <input
+                    type="number"
+                    id="mentorExperienceMonths"
+                    placeholder="Example: 6"
+                    min="0"
+                    max="11"
+                >
+            </div>
+
+            <br>
+
+            <div>
+                <label for="mentorBio">Professional Bio</label>
+                <textarea
+                    id="mentorBio"
+                    rows="5"
+                    maxlength="1000"
+                    placeholder="Describe your skills and mentoring experience"
+                ></textarea>
+            </div>
+
+            <br>
+
+            <div>
+                <label for="mentorResume">Upload Resume</label>
+                <input
+                    type="file"
+                    id="mentorResume"
+                    accept=".pdf,.doc,.docx"
+                >
+            </div>
+
+            <br>
+
+            <button type="button" id="saveMentorProfileBtn">
+                Save Mentor Profile
+            </button>
+
+        </div>
+
+        <hr>
+
         <h2>Mentor Availability</h2>
 
         <div>
-            <label>Day</label>
-            <select id="dayOfWeek">
-                <option>Monday</option>
-                <option>Tuesday</option>
-                <option>Wednesday</option>
-                <option>Thursday</option>
-                <option>Friday</option>
-                <option>Saturday</option>
-                <option>Sunday</option>
-            </select>
+            <label>Availability Date</label>
+            <input type="date" id="availabilityDate">
         </div>
 
         <br>
@@ -106,7 +179,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Day</th>
+                    <th>Date</th>
                     <th>Start</th>
                     <th>End</th>
                     <th>Duration</th>
@@ -128,6 +201,14 @@
     <div id="menteeSection" style="display:none;">
 
         <h2>Book Mentor Session</h2>
+
+        <div>
+            <label>Domain</label>
+
+            <select id="domainDropdown">
+                <option value="">Select Domain</option>
+            </select>
+        </div>
 
         <div>
             <label>Mentor</label>
@@ -153,6 +234,13 @@
         <hr>
 
         <h3>Available Slots</h3>
+
+        <div>
+            <label>Upload Resume</label>
+            <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
+        </div>
+
+        <br>
 
         <table border="1" width="100%">
             <thead>
@@ -260,13 +348,23 @@ async function init() {
 
     if (currentUser.role === "mentor") {
         document.getElementById("mentorSection").style.display = "block";
+
+        await loadMentorDesignations();
+        fillMentorProfile();
         loadMyAvailability();
+
+        document.getElementById("saveMentorProfileBtn").onclick =
+            saveMentorProfile;
     }
 
     if (currentUser.role === "mentee") {
         document.getElementById("menteeSection").style.display = "block";
+        loadDomains();
         loadMentors();
         loadMyBookings();
+
+        document.getElementById("domainDropdown").onchange = loadMentorsByDomain;
+        document.getElementById("sessionDate").onchange = loadMentorsByDate;
     }
 
     document.getElementById("createAvailabilityBtn").onclick = createAvailability;
@@ -291,6 +389,23 @@ async function api(url, options = {}) {
     return res.json();
 }
 
+async function apiForm(url, options = {}) {
+    const res = await fetch(BASE_URL + url, {
+        ...options,
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            ...(options.headers || {})
+        }
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Request failed");
+    }
+
+    return res.json();
+}
+
 async function loadProfile() {
     const user = await api("/profile/me");
     currentUser = user;
@@ -300,10 +415,120 @@ async function loadProfile() {
 
 /* ---------------- MENTOR ---------------- */
 
+async function loadMentorDesignations() {
+    try {
+        const data = await api("/mentor/domain/List");
+
+        const dropdown =
+            document.getElementById("mentorDesignation");
+
+        dropdown.innerHTML =
+            `<option value="">Select Domain</option>`;
+
+        data.domains.forEach(domain => {
+            const option = document.createElement("option");
+
+            option.value = domain;
+            option.textContent = domain;
+
+            dropdown.appendChild(option);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+function fillMentorProfile() {
+    document.getElementById("mentorFullName").value =
+        currentUser.full_name || "";
+
+    document.getElementById("mentorDesignation").value =
+        currentUser.designation || "";
+
+    document.getElementById("mentorExperienceYears").value =
+        currentUser.experience_years ?? "";
+
+    document.getElementById("mentorExperienceMonths").value =
+        currentUser.experience_months ?? "";
+
+    document.getElementById("mentorBio").value =
+        currentUser.bio || "";
+}
+
+async function saveMentorProfile() {
+    try {
+        const fullName =
+            document.getElementById("mentorFullName").value.trim();
+
+        const designation =
+            document.getElementById("mentorDesignation").value;
+
+        const experienceYears =
+            Number(document.getElementById("mentorExperienceYears").value);
+
+        const experienceMonths =
+            Number(document.getElementById("mentorExperienceMonths").value);
+
+        const bio =
+            document.getElementById("mentorBio").value.trim();
+
+        if (!fullName) {
+            alert("Enter your full name");
+            return;
+        }
+
+        if (!designation) {
+            alert("Select your domain");
+            return;
+        }
+
+        if (
+            experienceYears < 0 ||
+            experienceMonths < 0 ||
+            experienceMonths > 11
+        ) {
+            alert("Enter valid experience");
+            return;
+        }
+
+        const formData = new FormData();
+
+        formData.append("full_name", fullName);
+        formData.append("designation", designation);
+        formData.append("experience_years", experienceYears);
+        formData.append("experience_months", experienceMonths);
+        formData.append("bio", bio);
+
+        const resumeInput = document.getElementById("mentorResume");
+
+        if (resumeInput.files.length > 0) {
+            formData.append("resume", resumeInput.files[0]);
+        }
+
+        const data = await apiForm("/profile/update", {
+            method: "PUT",
+            body: formData
+        });
+
+        currentUser = data.user || data;
+
+        localStorage.setItem(
+            "wc_user",
+            JSON.stringify(currentUser)
+        );
+
+        alert("Mentor profile updated successfully");
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
 async function createAvailability() {
     try {
         const body = {
-            day_of_week: document.getElementById("dayOfWeek").value,
+            availability_date: document.getElementById("availabilityDate").value,
             start_time: document.getElementById("startTime").value,
             end_time: document.getElementById("endTime").value,
             slot_duration_minutes: Number(document.getElementById("slotDuration").value)
@@ -333,7 +558,7 @@ async function loadMyAvailability() {
 
             tr.innerHTML = `
                 <td>${a.id}</td>
-                <td>${a.day_of_week}</td>
+                <td>${a.availability_date}</td>
                 <td>${formatTime(a.start_time)}</td>
                 <td>${formatTime(a.end_time)}</td>
                 <td>${a.slot_duration_minutes}</td>
@@ -356,7 +581,7 @@ async function loadMyAvailability() {
 
 async function disableAvailability(id) {
     try {
-        await api(`/profile/availability/${id}`, {
+        await api(`/mentor/availability/${id}`, {
             method: "PATCH",
             body: JSON.stringify({ is_active: false })
         });
@@ -371,6 +596,28 @@ async function disableAvailability(id) {
 
 /* ---------------- MENTEE ---------------- */
 
+async function loadDomains() {
+    try {
+        const data = await api("/mentor/domain/List");
+
+        const dropdown = document.getElementById("domainDropdown");
+
+        dropdown.innerHTML = `<option value="">Select Domain</option>`;
+
+        data.domains.forEach(domain => {
+            const option = document.createElement("option");
+
+            option.value = domain;
+            option.textContent = domain;
+
+            dropdown.appendChild(option);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
 async function loadMentors() {
     try {
         const data = await api("/mentors");
@@ -381,6 +628,68 @@ async function loadMentors() {
             const option = document.createElement("option");
             option.value = m.id;
             option.textContent = `${m.display_name || m.full_name || "Mentor"} (${m.id})`;
+            dropdown.appendChild(option);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function loadMentorsByDomain() {
+    try {
+        const designation = document.getElementById("domainDropdown").value;
+
+        if (!designation) {
+            loadMentors();
+            return;
+        }
+
+        const data = await api(
+            `/mentor/bydomain?designation=${encodeURIComponent(designation)}`
+        );
+
+        const dropdown = document.getElementById("mentorDropdown");
+        dropdown.innerHTML = `<option value="">Select Mentor</option>`;
+
+        data.mentors.forEach(m => {
+            const option = document.createElement("option");
+
+            option.value = m.id;
+            option.textContent =
+                `${m.display_name || m.full_name || "Mentor"} (${m.id})`;
+
+            dropdown.appendChild(option);
+        });
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function loadMentorsByDate() {
+    try {
+        const date = document.getElementById("sessionDate").value;
+
+        if (!date) {
+            loadMentors();
+            return;
+        }
+
+        const data = await api(
+            `/mentor/bydate?session_date=${encodeURIComponent(date)}`
+        );
+
+        const dropdown = document.getElementById("mentorDropdown");
+        dropdown.innerHTML = `<option value="">Select Mentor</option>`;
+
+        data.mentors.forEach(m => {
+            const option = document.createElement("option");
+
+            option.value = m.id;
+            option.textContent =
+                `${m.display_name || m.full_name || "Mentor"} (${m.id})`;
+
             dropdown.appendChild(option);
         });
 
@@ -428,15 +737,24 @@ async function loadSlots() {
 
 async function bookSlot(mentorId, availabilityId, sessionDate, startTime, endTime) {
     try {
-        await api("/mentor/bookings", {
+        const resumeInput = document.getElementById("resumeFile");
+
+        if (!resumeInput.files.length) {
+            alert("Please upload resume before booking");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("mentor_id", mentorId);
+        formData.append("availability_id", availabilityId);
+        formData.append("session_date", sessionDate);
+        formData.append("start_time", startTime);
+        formData.append("end_time", endTime);
+        formData.append("resume", resumeInput.files[0]);
+
+        await apiForm("/mentor/bookings", {
             method: "POST",
-            body: JSON.stringify({
-                mentor_id: mentorId,
-                availability_id: availabilityId,
-                session_date: sessionDate,
-                start_time: startTime,
-                end_time: endTime
-            })
+            body: formData
         });
 
         alert("Slot booked");
@@ -450,11 +768,19 @@ async function bookSlot(mentorId, availabilityId, sessionDate, startTime, endTim
 
 async function loadMyBookings() {
     try {
-        const data = await api("/profile/me");
+        const bookingsData = await api("/mentor/bookings/all");
+
         const tbody = document.getElementById("bookingsTable");
         tbody.innerHTML = "";
 
-        data.bookings.forEach(b => {
+        const allBookings = [
+            ...(bookingsData.bookings?.active || []),
+            ...(bookingsData.bookings?.upcoming || []),
+            ...(bookingsData.bookings?.past || []),
+            ...(bookingsData.bookings?.cancelled || [])
+        ];
+
+        allBookings.forEach(b => {
             const tr = document.createElement("tr");
 
             tr.innerHTML = `

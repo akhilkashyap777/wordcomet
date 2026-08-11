@@ -805,3 +805,140 @@ video {
         width: 100%;
     }
 }
+
+/* ========================================
+   MENTOR PROFILE — NEW FIELDS
+======================================== */
+
+#mentorProfileForm {
+    margin-bottom: 24px;
+    padding: 22px;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+
+    background: rgba(10, 10, 15, 0.28);
+
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-medium);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+#mentorProfileForm > div {
+    margin: 0;
+}
+
+#mentorProfileForm > br {
+    display: none;
+}
+
+/* Professional bio takes the full row */
+#mentorProfileForm > div:nth-of-type(5) {
+    grid-column: 1 / -1;
+}
+
+textarea {
+    width: 100%;
+    min-height: 130px;
+    padding: 12px 13px;
+
+    display: block;
+    resize: vertical;
+    outline: none;
+
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.035);
+
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 11px;
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.88rem;
+    line-height: 1.6;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+textarea:hover {
+    border-color: rgba(108, 99, 255, 0.28);
+}
+
+textarea:focus {
+    background: rgba(108, 99, 255, 0.06);
+    border-color: var(--accent);
+
+    box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1);
+}
+
+textarea::placeholder,
+input::placeholder {
+    color: var(--muted);
+}
+
+#saveMentorProfileBtn {
+    width: fit-content;
+    grid-column: 1 / -1;
+    margin-top: 2px;
+}
+
+/* ========================================
+   RESUME UPLOAD
+======================================== */
+
+#resumeFile {
+    padding: 7px;
+    cursor: pointer;
+}
+
+#resumeFile::file-selector-button {
+    min-height: 34px;
+    margin-right: 12px;
+    padding: 7px 13px;
+
+    color: #ffffff;
+    background: var(--accent-soft);
+
+    border: 1px solid rgba(108, 99, 255, 0.3);
+    border-radius: 8px;
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+#resumeFile::file-selector-button:hover {
+    background: rgba(108, 99, 255, 0.22);
+    border-color: var(--accent);
+}
+
+/* ========================================
+   NEW FIELDS — RESPONSIVE
+======================================== */
+
+@media (max-width: 700px) {
+    #mentorProfileForm {
+        padding: 18px;
+        grid-template-columns: 1fr;
+    }
+
+    #mentorProfileForm > div:nth-of-type(5),
+    #saveMentorProfileBtn {
+        grid-column: 1;
+    }
+
+    #saveMentorProfileBtn {
+        width: 100%;
+    }
+}
