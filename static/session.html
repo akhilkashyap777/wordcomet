@@ -459,6 +459,22 @@ function connectWebSocket() {
 
                 break;
 
+            case "file":
+
+                chatMessages.innerHTML += `
+                    <div>
+                        <strong>Peer sent:</strong>
+                        <a href="${message.file_data}"
+                        download="${message.file_name}">
+                            ${message.file_name}
+                        </a>
+                    </div>
+                `;
+
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                break;
+
             case "error":
 
                 console.log(message.message);
@@ -646,26 +662,102 @@ endCallBtn.addEventListener("click", () => {
     screenShareBtn.classList.remove("control-btn-off");
 });
 
-sendChatBtn.addEventListener("click", () => {
+// sendChatBtn.addEventListener("click", () => {
 
-    if (!chatInput.value.trim()) return;
+//     if (!chatInput.value.trim()) return;
 
-    websocket.send(JSON.stringify({
-        type: "chat",
-        message: chatInput.value
-    }));
+//     websocket.send(JSON.stringify({
+//         type: "chat",
+//         message: chatInput.value
+//     }));
 
-    chatMessages.innerHTML += `
-        <div>
-            <strong>You:</strong> ${chatInput.value}
-        </div>
-    `;
+//     chatMessages.innerHTML += `
+//         <div>
+//             <strong>You:</strong> ${chatInput.value}
+//         </div>
+//     `;
+
+//     chatMessages.scrollTop = chatMessages.scrollHeight;
+
+//     chatInput.value = "";
+
+// });
+
+sendChatBtn.addEventListener("click", async () => {
+
+    const message = chatInput.value.trim();
+    const file = chatFileInput.files[0];
+
+    if (!message && !file) return;
+
+    if (websocket.readyState !== WebSocket.OPEN) {
+        alert("Chat is not connected.");
+        return;
+    }
+
+    // Send selected file
+    if (file) {
+
+        const maxSize = 5 * 1024 * 1024;
+
+        if (file.size > maxSize) {
+            alert("File must be smaller than 5 MB.");
+            return;
+        }
+
+        const fileData = await readFileAsDataURL(file);
+
+        websocket.send(JSON.stringify({
+            type: "file",
+            file_name: file.name,
+            file_type: file.type,
+            file_data: fileData
+        }));
+
+        chatMessages.innerHTML += `
+            <div>
+                <strong>You sent:</strong>
+                <a href="${fileData}" download="${file.name}">
+                    ${file.name}
+                </a>
+            </div>
+        `;
+
+        chatFileInput.value = "";
+    }
+
+    // Send text message
+    if (message) {
+
+        websocket.send(JSON.stringify({
+            type: "chat",
+            message: message
+        }));
+
+        chatMessages.innerHTML += `
+            <div>
+                <strong>You:</strong> ${message}
+            </div>
+        `;
+
+        chatInput.value = "";
+    }
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    chatInput.value = "";
-
 });
+
+function readFileAsDataURL(file) {
+
+    return new Promise((resolve, reject) => {
+
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+
+        reader.readAsDataURL(file);
+    });
+}
 
 // start();
 document.getElementById("joinBtn").addEventListener("click", start);
