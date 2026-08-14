@@ -19,6 +19,7 @@ import httpx
 import uuid
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
+from notification_store import fcm_tokens, _save_tokens
 
 # from database import db_session
 
@@ -47,7 +48,7 @@ os.makedirs(WORD_IMAGE_DIR, exist_ok=True)
 # test firebase credentials
 # SERVICE_ACCOUNT_JSON = os.path.join(BASE_DIR, "wordcomet-testenv.json")
 
-TOKEN_STORE_FILE = os.path.join(BASE_DIR, "fcm_tokens.json")
+# TOKEN_STORE_FILE = os.path.join(BASE_DIR, "fcm_tokens.json")
 WORD_STORE_FILE = os.path.join(BASE_DIR, "current_word.json")
 
 ADMIN_API_KEY = os.environ.get("WORDCOMET_ADMIN_KEY")
@@ -59,7 +60,8 @@ TURN_API_TOKEN = os.environ.get("TURN_API_TOKEN")
 
 if os.path.exists(SERVICE_ACCOUNT_JSON):
     cred = credentials.Certificate(SERVICE_ACCOUNT_JSON)
-    firebase_admin.initialize_app(cred)
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
     print("Firebase project loaded:", firebase_admin.get_app().project_id)
     print("🔥 Firebase initialized successfully.")
 else:
@@ -68,17 +70,17 @@ else:
 
 # ─── FCM Token Storage ──────────────────────────────────────────────
 
-def _load_tokens() -> set:
-    if os.path.exists(TOKEN_STORE_FILE):
-        with open(TOKEN_STORE_FILE, "r") as f:
-            return set(json.load(f))
-    return set()
+# def _load_tokens() -> set:
+#     if os.path.exists(TOKEN_STORE_FILE):
+#         with open(TOKEN_STORE_FILE, "r") as f:
+#             return set(json.load(f))
+#     return set()
 
-def _save_tokens(tokens: set):
-    with open(TOKEN_STORE_FILE, "w") as f:
-        json.dump(list(tokens), f)
+# def _save_tokens(tokens: set):
+#     with open(TOKEN_STORE_FILE, "w") as f:
+#         json.dump(list(tokens), f)
 
-fcm_tokens: set = _load_tokens()
+# fcm_tokens: set = _load_tokens()
 
 # ─── Word Persistence ───────────────────────────────────────────────
 

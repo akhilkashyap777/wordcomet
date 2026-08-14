@@ -129,7 +129,7 @@ def set_quiz(
 
 def send_quiz_notification(quiz_data: dict, featured_index: int = 0):
     """Notify devices with a specific question in the body."""
-    from deploy import fcm_tokens, _save_tokens
+    from notification_store import fcm_tokens, _save_tokens
     
     if not firebase_admin._apps or not fcm_tokens:
         return
