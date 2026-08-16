@@ -19,12 +19,20 @@ import httpx
 import uuid
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
-from notification_store import fcm_tokens, _save_tokens
+from notification_store import (
+    fcm_tokens,
+    fcm_countries,
+    _save_tokens,
+    _save_countries,
+)
+import geoip2.database
 
 # from database import db_session
 
 load_dotenv()
 #load_dotenv("/var/www/wordcomet/.env")
+
+from announcements import router as announcements_router
 
 import firebase_admin
 from firebase_admin import credentials, messaging
@@ -39,6 +47,9 @@ from mentor_slots import router as mentor_slots_router
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+GEOIP_DATABASE = os.path.join(BASE_DIR, "GeoLite2-Country.mmdb")
+geoip_reader = geoip2.database.Reader(GEOIP_DATABASE)
+
 # live credentials
 SERVICE_ACCOUNT_JSON = os.path.join(BASE_DIR, "wordcomet.json")
 
@@ -50,6 +61,7 @@ os.makedirs(WORD_IMAGE_DIR, exist_ok=True)
 
 # TOKEN_STORE_FILE = os.path.join(BASE_DIR, "fcm_tokens.json")
 WORD_STORE_FILE = os.path.join(BASE_DIR, "current_word.json")
+
 
 ADMIN_API_KEY = os.environ.get("WORDCOMET_ADMIN_KEY")
 
@@ -113,6 +125,7 @@ app.include_router(challenges_router)
 app.include_router(websocket_router)
 app.include_router(mentor_slots_router)
 app.include_router(quiz_router)
+app.include_router(announcements_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -206,14 +219,38 @@ def get_word_brief():
 
 
 @app.post("/register-device")
-def register_device(body: TokenRegister):
-    """Extension/app registers for push notifications."""
+def register_device(body: TokenRegister, request: Request):
+    """Register an FCM token and detect its country."""
+
     if not body.token:
         raise HTTPException(status_code=400, detail="Token cannot be empty.")
-    fcm_tokens.add(body.token)
-    _save_tokens(fcm_tokens)
-    return {"status": "registered", "total_devices": len(fcm_tokens)}
 
+    forwarded_for = request.headers.get("x-forwarded-for")
+
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.client.host
+
+    country = "UNKNOWN"
+
+    try:
+        country_response = geoip_reader.country(client_ip)
+        country = country_response.country.iso_code or "UNKNOWN"
+    except Exception as error:
+        print(f"Country detection failed for {client_ip}: {error}")
+
+    fcm_tokens.add(body.token)
+    fcm_countries[body.token] = country
+
+    _save_tokens(fcm_tokens)
+    _save_countries()
+
+    return {
+        "status": "registered",
+        "country": country,
+        "total_devices": len(fcm_tokens)
+    }
 
 @app.delete("/unregister-device")
 def unregister_device(body: TokenRegister):
