@@ -48,7 +48,11 @@ from mentor_slots import router as mentor_slots_router
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 GEOIP_DATABASE = os.path.join(BASE_DIR, "GeoLite2-Country.mmdb")
-geoip_reader = geoip2.database.Reader(GEOIP_DATABASE)
+geoip_reader = (
+    geoip2.database.Reader(GEOIP_DATABASE)
+    if os.path.exists(GEOIP_DATABASE)
+    else None
+)
 
 # live credentials
 SERVICE_ACCOUNT_JSON = os.path.join(BASE_DIR, "wordcomet.json")

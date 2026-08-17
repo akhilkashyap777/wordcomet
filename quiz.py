@@ -131,7 +131,19 @@ def send_quiz_notification(quiz_data: dict, featured_index: int = 0):
     """Notify devices with a specific question in the body."""
     from notification_store import fcm_tokens, _save_tokens
     
-    if not firebase_admin._apps or not fcm_tokens:
+    print(
+        f"📢 Quiz notification started | "
+        f"Firebase initialized: {bool(firebase_admin._apps)} | "
+        f"FCM tokens: {len(fcm_tokens)}",
+        flush=True
+    )
+
+    if not firebase_admin._apps:
+        print("❌ Quiz notification stopped: Firebase is not initialized.", flush=True)
+        return
+
+    if not fcm_tokens:
+        print("❌ Quiz notification stopped: No FCM tokens found.", flush=True)
         return
 
     questions = quiz_data.get("questions", [])
