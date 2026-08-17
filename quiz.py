@@ -179,12 +179,26 @@ def send_quiz_notification(quiz_data: dict, featured_index: int = 0):
             messaging.send(message)
             success_count += 1
         except messaging.UnregisteredError:
+            print(
+                f"🗑️ Unregistered FCM token ending {token[-8:]}",
+                flush=True
+            )
             stale.add(token)
         except Exception as e:
-            print(f"   ⚠️  Quiz notif failed: {e}")
+            print(
+                f"⚠️ Quiz notification failed for token ending "
+                f"{token[-8:]}: {type(e).__name__}: {e}",
+                flush=True
+            )
 
     if stale:
         fcm_tokens.difference_update(stale)
         _save_tokens(fcm_tokens)
 
-    print(f"   📬 Quiz notif sent to {success_count} device(s).")
+    print(
+        f"📬 Quiz notification completed | "
+        f"Success: {success_count} | "
+        f"Removed stale tokens: {len(stale)} | "
+        f"Total attempted: {len(fcm_tokens) + len(stale)}",
+        flush=True
+    )
