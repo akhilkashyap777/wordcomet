@@ -11,47 +11,7 @@
 
     <main class="video-call-page">
 
-        <div class="video-call-logo">
-
-            <nav class="top-nav">
-
-                <div class="nav-brand">
-                    <span class="nav-brand-icon">☄️</span>
-
-                    <span class="nav-brand-text">
-                        Word<span>Comet</span>
-                    </span>
-                </div>
-
-                <div class="nav-links">
-
-                    <a href="booking.html" class="nav-link">
-                        Bookings
-                    </a>
-
-                    <a href="dashboard.html" class="nav-link">
-                        Dashboard
-                    </a>
-
-                    <a href="friends.html" class="nav-link">
-                        Friends
-                    </a>
-
-                    <a href="settings.html" class="nav-link">
-                        Settings
-                    </a>
-
-                    <button
-                        id="logoutBtn"
-                        class="nav-link nav-logout"
-                        type="button">
-                        Logout
-                    </button>
-
-                </div>
-
-            </nav>
-        </div>
+        
 
         <section class="video-call-header">
 
@@ -205,6 +165,42 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+async function loadTopbar() {
+    try {
+        const response = await fetch("topbar.html");
+
+        if (!response.ok) {
+            throw new Error(
+                `Could not load top bar. Status: ${response.status}`
+            );
+        }
+
+        const topbarHtml = await response.text();
+
+        document.getElementById("topbarContainer").innerHTML =
+            topbarHtml;
+
+        const activeLink = document.querySelector(
+            '[data-page="session"]'
+        );
+
+        if (activeLink) {
+            activeLink.classList.add("active");
+        }
+
+        const logoutButton =
+            document.getElementById("sharedLogoutBtn");
+
+        if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+                window.logout();
+            });
+        }
+
+    } catch (error) {
+        console.error("Top-bar loading failed:", error);
+    }
+}
 // const ROOM_ID = "mentor-3-mentee-7-test-room";
 
 // Change these for production
@@ -762,38 +758,38 @@ function readFileAsDataURL(file) {
 // start();
 document.getElementById("joinBtn").addEventListener("click", start);
 
-document
-    .getElementById("logoutBtn")
-    .addEventListener("click", async () => {
+window.logout = async function () {
 
-        if (localStream) {
-            localStream
-                .getTracks()
-                .forEach(track => track.stop());
-        }
+    if (localStream) {
+        localStream
+            .getTracks()
+            .forEach(track => track.stop());
+    }
 
-        if (screenStream) {
-            screenStream
-                .getTracks()
-                .forEach(track => track.stop());
-        }
+    if (screenStream) {
+        screenStream
+            .getTracks()
+            .forEach(track => track.stop());
+    }
 
-        if (peerConnection) {
-            peerConnection.close();
-        }
+    if (peerConnection) {
+        peerConnection.close();
+    }
 
-        if (websocket) {
-            websocket.close();
-        }
+    if (websocket) {
+        websocket.close();
+    }
 
-        localStorage.removeItem("wc_id_token");
-        localStorage.removeItem("wc_user");
-        localStorage.removeItem("wc_firebase_uid");
+    localStorage.removeItem("wc_id_token");
+    localStorage.removeItem("wc_user");
+    localStorage.removeItem("wc_firebase_uid");
 
-        await auth.signOut();
+    await auth.signOut();
 
-        window.location.href = "login.html";
-    });
+    window.location.href = "login.html";
+};
+
+loadTopbar();
 
 </script>
 

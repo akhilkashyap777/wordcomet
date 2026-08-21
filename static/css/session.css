@@ -11,6 +11,8 @@
     --text: #e8e8f0;
     --muted: #76768f;
     --warning: #fbbf24;
+    --accent-secondary: #ff6584;
+    --accent-soft: rgba(108, 99, 255, 0.14);
 }
 
 * {
@@ -31,8 +33,14 @@ body {
     overflow-x: hidden;
     overflow-y: auto;
     position: relative;
+    flex-direction: column;
 }
 
+#topbarContainer {
+    width: min(1180px, calc(100vw - 40px));
+    position: relative;
+    z-index: 10;
+}
 /* Soft background glow */
 
 body::before,

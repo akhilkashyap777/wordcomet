@@ -8,16 +8,13 @@
 </head>
 <body>
 
-    <h1>WordComet Dashboard</h1>
+    <div id="topbarContainer"></div>
 
-    <nav>
-        <button id="profileBtn" type="button">Profile</button>
-        <button id="mentorshipBtn" type="button">Mentorship</button>
-        <button id="friendsBtn" type="button">Friends</button>
-        <button id="sessionBtn" type="button">Session</button>
-        <button id="refreshBtn" type="button">Refresh Dashboard</button>
-        <button id="logoutBtn" type="button">Sign Out</button>
-    </nav>
+    <div class="dashboard-actions">
+        <button id="refreshBtn" type="button">
+            Refresh Dashboard
+        </button>
+    </div>
 
     <hr>
 
@@ -101,7 +98,6 @@
                 <p>No upcoming bookings.</p>
             </div>
         </section>
-                </section>
 
         <hr>
 
@@ -193,6 +189,55 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+
+    async function loadTopbar() {
+        try {
+            const response = await fetch("topbar.html");
+
+            if (!response.ok) {
+                throw new Error(
+                    `Could not load top bar. Status: ${response.status}`
+                );
+            }
+
+            const topbarHtml = await response.text();
+
+            document.getElementById("topbarContainer").innerHTML =
+                topbarHtml;
+
+            const activeLink = document.querySelector(
+                '[data-page="dashboard"]'
+            );
+
+            if (activeLink) {
+                activeLink.classList.add("active");
+            }
+
+            const logoutButton =
+                document.getElementById("sharedLogoutBtn");
+
+            if (logoutButton) {
+                logoutButton.addEventListener(
+                    "click",
+                    handleSharedLogout
+                );
+            }
+
+        } catch (error) {
+            console.error("Top-bar loading failed:", error);
+        }
+    }
+
+    async function handleSharedLogout() {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Firebase sign-out failed:", error);
+        } finally {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+    }
 
     let firebaseUser = null;
     let idToken = null;
@@ -814,30 +859,6 @@
         window.location.href = "session.html";
     }
 
-    document.getElementById("profileBtn").addEventListener("click", () => {
-        window.location.href = "settings.html";
-    });
-
-    document.getElementById("mentorshipBtn").addEventListener("click", () => {
-        window.location.href = "booking.html";
-    });
-
-    document.getElementById("friendsBtn").addEventListener("click", () => {
-        window.location.href = "friends.html";
-    });
-
-    document.getElementById("sessionBtn").addEventListener("click", () => {
-        window.location.href = "session.html";
-    });
-
-    document.getElementById("openBookingBtn").addEventListener("click", () => {
-        window.location.href = "booking.html";
-    });
-
-    document.getElementById("bookMentorBtn").addEventListener("click", () => {
-        window.location.href = "booking.html";
-    });
-
     document.getElementById("refreshBtn").addEventListener("click", () => {
         loadDashboard();
     });
@@ -856,15 +877,6 @@
         cancelActiveBooking
     );
 
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-        try {
-            await signOut(auth);
-        } finally {
-            localStorage.clear();
-            window.location.href = "login.html";
-        }
-    });
-
     onAuthStateChanged(auth, async user => {
         if (!user) {
             localStorage.clear();
@@ -875,6 +887,7 @@
         firebaseUser = user;
         idToken = await user.getIdToken();
 
+        await loadTopbar();
         await loadDashboard();
     });
 </script>

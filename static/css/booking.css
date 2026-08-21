@@ -942,3 +942,41 @@ input::placeholder {
         width: 100%;
     }
 }
+
+#toastContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.toast {
+    min-width: 250px;
+    margin-bottom: 10px;
+    padding: 14px 18px;
+    color: white;
+    background: #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    animation: toastSlideIn 0.3s ease;
+}
+
+.toast.success {
+    background: #28a745;
+}
+
+.toast.error {
+    background: #dc3545;
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

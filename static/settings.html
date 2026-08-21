@@ -394,38 +394,7 @@
 <div class="orb orb1"></div>
 <div class="orb orb2"></div>
 
-<header class="site-header">
-  <a class="logo" href="session.html">
-    <div class="logo-icon">☄️</div>
-    <div class="logo-text">Word<span>Comet</span></div>
-  </a>
-
-  <nav class="topbar-nav">
-    <button class="nav-link" onclick="window.location.href='session.html'">
-      Session
-    </button>
-
-    <button class="nav-link" onclick="window.location.href='dashboard.html'">
-        Dashboard
-    </button>
-
-    <button class="nav-link" onclick="window.location.href='friends.html'">
-      Friends
-    </button>
-
-    <button class="nav-link" onclick="window.location.href='booking.html'">
-      Mentorship
-    </button>
-
-    <button class="nav-link active" onclick="window.location.href='settings.html'">
-      Profile
-    </button>
-
-    <button class="nav-link logout-link" onclick="logout()">
-      Logout
-    </button>
-  </nav>
-</header>
+<div id="topbarContainer"></div>
 
 <main class="page-content">
   <div class="card" id="card">
@@ -547,6 +516,43 @@
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
+  async function loadTopbar() {
+    try {
+        const response = await fetch("topbar.html");
+
+        if (!response.ok) {
+            throw new Error(
+                `Could not load top bar. Status: ${response.status}`
+            );
+        }
+
+        const topbarHtml = await response.text();
+
+        document.getElementById("topbarContainer").innerHTML =
+            topbarHtml;
+
+        const activeLink = document.querySelector(
+            '[data-page="settings"]'
+        );
+
+        if (activeLink) {
+            activeLink.classList.add("active");
+        }
+
+        const logoutButton =
+            document.getElementById("sharedLogoutBtn");
+
+        if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+                window.logout();
+            });
+        }
+
+    } catch (error) {
+        console.error("Top-bar loading failed:", error);
+    }
+  }
+
   let currentUser  = null;   // Firebase user
   let profileData  = null;   // DB user row
   let selectedRole = null;
@@ -644,7 +650,13 @@
         return;
       }
 
-      if (!res.ok) throw new Error("Failed to load profile.");
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("LOGIN_EXPIRED");
+    }
+
+    if (!res.ok) {
+        throw new Error("Failed to load profile.");
+    }
 
       profileData = await res.json();
       localStorage.setItem("wc_user", JSON.stringify(profileData));
@@ -653,7 +665,8 @@
       showSetupUI(firebaseUser, profileData, isComplete);
 
     } catch (e) {
-      showToast("Could not load profile.", "error");
+        console.error("Profile loading failed:", e);
+        throw e;
     }
   }
 
@@ -798,20 +811,26 @@
 
   // ── Auth gate ────────────────────────────────────────────────────────
 
-  onAuthStateChanged(auth, (user) => {
-      if (!user) {
-          // Don't redirect — check if we have a stored token from login
-          const storedToken = localStorage.getItem("wc_id_token");
-          const storedUid   = localStorage.getItem("wc_firebase_uid");
-          if (!storedToken || !storedUid) {
-              window.location.href = "login.html";
-              return;
-          }
-          // Use stored token to load profile
-          loadProfileFromToken(storedToken, storedUid);
-          return;
-      }
-      loadProfile(user);
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        localStorage.removeItem("wc_id_token");
+        localStorage.removeItem("wc_user");
+        localStorage.removeItem("wc_firebase_uid");
+
+        window.location.replace("login.html");
+        return;
+    }
+
+    try {
+      await loadTopbar();
+      await loadProfile(user);
+    } catch (error) {
+        console.error("Authentication failed:", error);
+
+        await signOut(auth);
+        localStorage.clear();
+        window.location.replace("login.html");
+    }
   });
 </script>
 </body>

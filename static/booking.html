@@ -6,48 +6,7 @@
 </head>
 <body>
 
-    <header class="site-header">
-        <a class="logo" href="session.html">
-            <div class="logo-icon">☄️</div>
-            <div class="logo-text">
-                Word<span>Comet</span>
-            </div>
-        </a>
-
-        <nav class="topbar-nav">
-
-            <button class="nav-link"
-                onclick="window.location.href='session.html'">
-                Session
-            </button>
-
-            <button class="nav-link"
-                onclick="window.location.href='dashboard.html'">
-                Dashboard
-            </button>
-
-            <button class="nav-link"
-                onclick="window.location.href='friends.html'">
-                Friends
-            </button>
-
-            <button class="nav-link active"
-                onclick="window.location.href='booking.html'">
-                Mentorship
-            </button>
-
-            <button class="nav-link"
-                onclick="window.location.href='settings.html'">
-                Profile
-            </button>
-
-            <button class="nav-link logout-link"
-                onclick="logout()">
-                Logout
-            </button>
-
-        </nav>
-    </header>
+    <div id="topbarContainer"></div>
 
     <hr>
 
@@ -328,23 +287,106 @@
     </div>
 
 </body>
-
+<div id="toastContainer"></div>
 <script>
-const BASE_URL = "https://wordcomet.shyapsneon.tech";
+
+console.log("BOOKING AUTH CHECK VERSION 1");
 
 let token = localStorage.getItem("wc_id_token");
+
+console.log("Current page:", window.location.href);
+console.log("Token exists:", Boolean(token));
+console.log("Token value:", token);
+console.log("Stored user:", localStorage.getItem("wc_user"));
+
+if (!token) {
+    console.log("No token found. Redirecting to login.html");
+    window.location.replace("login.html");
+} else {
+    console.log("Token found. Validating through /profile/me");
+}
+
+function showToast(message, type = "error") {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+const BASE_URL = "https://wordcomet.shyapsneon.tech";
 let currentUser = JSON.parse(localStorage.getItem("wc_user") || "{}");
 
-document.addEventListener("DOMContentLoaded", init);
+if (!token) {
+    window.location.replace("login.html");
+}
+
+async function loadTopbar() {
+    try {
+        const response = await fetch("topbar.html");
+
+        if (!response.ok) {
+            throw new Error(
+                `Could not load top bar. Status: ${response.status}`
+            );
+        }
+
+        const topbarHtml = await response.text();
+
+        document.getElementById("topbarContainer").innerHTML = topbarHtml;
+
+        const activeLink = document.querySelector(
+            '[data-page="booking"]'
+        );
+
+        if (activeLink) {
+            activeLink.classList.add("active");
+        }
+
+        const logoutButton =
+            document.getElementById("sharedLogoutBtn");
+
+        if (logoutButton) {
+            logoutButton.addEventListener("click", logout);
+        }
+
+    } catch (error) {
+        console.error("Top-bar loading failed:", error);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadTopbar();
+    init();
+});
 
 async function init() {
+    console.log("init() started");
+
     if (!token) {
-        alert("Login first");
-        window.location.href = "login.html";
+        console.log("init(): token is missing");
+        window.location.replace("login.html");
         return;
     }
 
-    await loadProfile();
+    try {
+        console.log("Calling /profile/me...");
+        await loadProfile();
+        console.log("Profile loaded successfully:", currentUser);
+    } catch (err) {
+        console.error("Profile validation failed:", err);
+
+        localStorage.removeItem("wc_id_token");
+        localStorage.removeItem("wc_user");
+
+        console.log("Stored login data removed. Redirecting...");
+        window.location.replace("login.html");
+        return;
+    }
 
     if (currentUser.role === "mentor") {
         document.getElementById("mentorSection").style.display = "block";
@@ -435,7 +477,7 @@ async function loadMentorDesignations() {
         });
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -521,7 +563,7 @@ async function saveMentorProfile() {
         alert("Mentor profile updated successfully");
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -543,7 +585,7 @@ async function createAvailability() {
         loadMyAvailability();
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -575,7 +617,7 @@ async function loadMyAvailability() {
         });
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -590,7 +632,7 @@ async function disableAvailability(id) {
         loadMyAvailability();
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -614,7 +656,7 @@ async function loadDomains() {
         });
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -632,7 +674,7 @@ async function loadMentors() {
         });
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -663,7 +705,7 @@ async function loadMentorsByDomain() {
         });
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -694,7 +736,7 @@ async function loadMentorsByDate() {
         });
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -731,7 +773,7 @@ async function loadSlots() {
         });
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -757,12 +799,12 @@ async function bookSlot(mentorId, availabilityId, sessionDate, startTime, endTim
             body: formData
         });
 
-        alert("Slot booked");
+        showToast("Slot booked", "success");
         loadSlots();
         loadMyBookings();
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -806,7 +848,7 @@ async function loadMyBookings() {
         });
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 
@@ -820,7 +862,7 @@ async function cancelBooking(id) {
         loadMyBookings();
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message);
     }
 }
 

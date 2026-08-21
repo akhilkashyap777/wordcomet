@@ -14,6 +14,8 @@
     --text:#e8e8f0;
     --muted:#5a5a72;
     --accent:#6c63ff;
+    --accent-secondary:#ff6584;
+    --accent-soft:rgba(108,99,255,0.14);
     --green:#4ade80;
     --red:#ff6584;
 }
@@ -29,6 +31,13 @@ body{
     color:var(--text);
     font-family:Arial, sans-serif;
     padding:30px;
+}
+
+#topbarContainer {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
 }
 
 .container{
@@ -157,18 +166,14 @@ body{
 </head>
 <body>
 
+<div id="topbarContainer"></div>
+
 <div class="container">
 
     <div class="header">
+
         <h1>👥 Friends</h1>
 
-        <button class="back-btn" onclick="window.location.href='settings.html'">
-            ← Back
-        </button>
-        <div style="display:flex;gap:10px;">
-            <button class="back-btn" onclick="window.location.href='settings.html'">
-                Profile
-            </button>
         </div>
     </div>
 
@@ -380,5 +385,69 @@ async function searchUsers() {
     }
 }
 </script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDD0z45h-E_FZTkbjpwm3TJMqNTbSub0B0",
+    authDomain: "wordcomet.firebaseapp.com",
+    projectId: "wordcomet",
+    storageBucket: "wordcomet.firebasestorage.app",
+    messagingSenderId: "218267654833",
+    appId: "1:218267654833:web:1216a59da0632a89d7a090",
+    measurementId: "G-NHRYJRJZ0G"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+
+window.logout = async function () {
+    await signOut(auth);
+    localStorage.clear();
+    window.location.href = "login.html";
+};
+
+async function loadTopbar() {
+    try {
+        const response = await fetch("topbar.html");
+
+        if (!response.ok) {
+            throw new Error(
+                `Could not load top bar. Status: ${response.status}`
+            );
+        }
+
+        const topbarHtml = await response.text();
+
+        document.getElementById("topbarContainer").innerHTML =
+            topbarHtml;
+
+        const activeLink = document.querySelector(
+            '[data-page="friends"]'
+        );
+
+        if (activeLink) {
+            activeLink.classList.add("active");
+        }
+
+        const logoutButton =
+            document.getElementById("sharedLogoutBtn");
+
+        if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+                window.logout();
+            });
+        }
+
+    } catch (error) {
+        console.error("Top-bar loading failed:", error);
+    }
+}
+
+loadTopbar();
+</script>
+
 </body>
 </html>
