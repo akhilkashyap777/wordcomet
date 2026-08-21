@@ -6,8 +6,11 @@
     <link rel="stylesheet" href="css/session.css">
 </head>
 <body>
+<div id="topbarContainer"></div>
 
 <div id="app">
+
+    
 
     <main class="video-call-page">
 
@@ -272,6 +275,10 @@ async function start() {
                         Join Video Call Again
                     </button>
 
+                    <button id="backToSessionBtn" class="join-call-btn">
+                        Back to Session
+                    </button>
+
                 </section>
 
             </main>
@@ -280,6 +287,12 @@ async function start() {
         document
             .getElementById("retryBtn")
             .addEventListener("click", start);
+
+        document
+            .getElementById("backToSessionBtn")
+            .addEventListener("click", () => {
+                window.location.reload();
+        });
 
         return;
     }
