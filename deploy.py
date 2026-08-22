@@ -19,6 +19,7 @@ import httpx
 import uuid
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from notification_store import (
     fcm_tokens,
     fcm_countries,
@@ -192,14 +193,17 @@ class WordInput(BaseModel):
 
 # ─── Public Endpoints ───────────────────────────────────────────────
 
+# @app.get("/")
+# def root():
+#     return {
+#         "service": "WordComet",
+#         "status": "running",
+#         "has_word": current_word is not None,
+#     }
+
 @app.get("/")
 def root():
-    return {
-        "service": "WordComet",
-        "status": "running",
-        "has_word": current_word is not None,
-    }
-
+    return FileResponse(os.path.join(BASE_DIR, "static", "login.html"))
 
 @app.get("/word-of-the-day")
 def get_word():
