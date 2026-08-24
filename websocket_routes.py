@@ -1,6 +1,7 @@
 import uuid
 import httpx
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 import os
 import psycopg2
@@ -73,7 +74,7 @@ async def chat_websocket(websocket: WebSocket, room_id: str):
         await websocket.close()
         return
 
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("Asia/Kolkata")).replace(tzinfo=None)
 
     session_start = datetime.combine(
         booking["session_date"],
