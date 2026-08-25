@@ -121,7 +121,7 @@
 
         <div>
             <label>Slot Duration (Minutes)</label>
-            <input type="number" id="slotDuration" value="60">
+            <input type="number" id="slotDuration" readonly>
         </div>
 
         <br>
@@ -406,8 +406,19 @@ async function init() {
         loadMyBookings();
 
         document.getElementById("domainDropdown").onchange = loadMentorsByDomain;
-        document.getElementById("sessionDate").onchange = loadMentorsByDate;
+        document.getElementById("sessionDate").onblur = loadMentorsByDate;
     }
+
+    document.getElementById("startTime").onchange = updateSlotDuration;
+    document.getElementById("endTime").onchange = updateSlotDuration;
+    const today = new Date();
+
+    const localToday =
+        today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+
+    document.getElementById("availabilityDate").min = localToday;
 
     document.getElementById("createAvailabilityBtn").onclick = createAvailability;
     document.getElementById("loadSlotsBtn").onclick = loadSlots;
@@ -567,6 +578,26 @@ async function saveMentorProfile() {
     }
 }
 
+function updateSlotDuration() {
+    const startTime = document.getElementById("startTime").value;
+    const endTime = document.getElementById("endTime").value;
+    const durationInput = document.getElementById("slotDuration");
+
+    if (!startTime || !endTime) {
+        durationInput.value = "";
+        return;
+    }
+
+    const [startHour, startMinute] = startTime.split(":").map(Number);
+    const [endHour, endMinute] = endTime.split(":").map(Number);
+
+    const startTotal = startHour * 60 + startMinute;
+    const endTotal = endHour * 60 + endMinute;
+    const duration = endTotal - startTotal;
+
+    durationInput.value = duration > 0 ? duration : "";
+}
+
 async function createAvailability() {
     try {
         const body = {
@@ -581,7 +612,7 @@ async function createAvailability() {
             body: JSON.stringify(body)
         });
 
-        alert("Availability created");
+        showToast("Availability created", "success");
         loadMyAvailability();
 
     } catch (err) {

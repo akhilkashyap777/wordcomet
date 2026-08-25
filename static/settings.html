@@ -754,23 +754,46 @@
     }
   };
 
+  // async function updateName(idToken, name) {
+  //   const res = await fetch(`${BASE_URL}/profile/me`, {
+  //     method: "PATCH",
+  //     headers: {
+  //       "Content-Type":  "application/json",
+  //       "Authorization": `Bearer ${idToken}`,
+  //     },
+  //     body: JSON.stringify({ display_name: name }),
+  //   });
+  //   if (!res.ok) {
+  //     const err = await res.json();
+  //     throw new Error(err.detail || "Update failed.");
+  //   }
+  //   const data = await res.json();
+  //   profileData = data.user;
+  //   localStorage.setItem("wc_user", JSON.stringify(profileData));
+  //   showToast("Name updated ✓", "success");
+  // }
+
   async function updateName(idToken, name) {
-    const res = await fetch(`${BASE_URL}/profile/me`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type":  "application/json",
-        "Authorization": `Bearer ${idToken}`,
-      },
-      body: JSON.stringify({ display_name: name }),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || "Update failed.");
-    }
-    const data = await res.json();
-    profileData = data.user;
-    localStorage.setItem("wc_user", JSON.stringify(profileData));
-    showToast("Name updated ✓", "success");
+      const formData = new FormData();
+      formData.append("display_name", name);
+
+      const res = await fetch(`${BASE_URL}/profile/update`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${idToken}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Update failed.");
+      }
+
+      const data = await res.json();
+      profileData = data.user;
+      localStorage.setItem("wc_user", JSON.stringify(profileData));
+      showToast("Name updated ✓", "success");
   }
 
   // ── Session ──────────────────────────────────────────────────────────
