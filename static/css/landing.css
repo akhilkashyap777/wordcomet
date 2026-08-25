@@ -1,0 +1,718 @@
+/* ======================================================
+   WordComet landing page
+====================================================== */
+
+:root {
+  --background: #09090f;
+  --surface: #111119;
+  --surface-light: #171722;
+  --border: #252536;
+
+  --primary: #756cff;
+  --primary-light: #9c96ff;
+  --secondary: #ff6584;
+
+  --text: #f1f1f7;
+  --muted: #a0a0b5;
+  --dark-muted: #74748a;
+
+  --container: 1180px;
+  --section-spacing: 110px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: "DM Sans", sans-serif;
+  background:
+    radial-gradient(
+      circle at 10% 5%,
+      rgba(117, 108, 255, 0.15),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 25%,
+      rgba(255, 101, 132, 0.09),
+      transparent 28%
+    ),
+    var(--background);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul {
+  list-style: none;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ======================================================
+   Shared layout
+====================================================== */
+
+header,
+main,
+footer {
+  position: relative;
+  z-index: 1;
+}
+
+section {
+  width: min(var(--container), calc(100% - 40px));
+  margin-inline: auto;
+  padding-block: var(--section-spacing);
+}
+
+section > div:first-child > p:first-child {
+  margin-bottom: 14px;
+  color: var(--primary-light);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+section h2 {
+  max-width: 720px;
+  margin-bottom: 18px;
+  font-family: "Syne", sans-serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+
+section > div:first-child > h2 + p {
+  max-width: 680px;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+/* ======================================================
+   Navigation
+====================================================== */
+
+header {
+  width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(9, 9, 15, 0.78);
+  backdrop-filter: blur(18px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+nav {
+  width: min(var(--container), calc(100% - 40px));
+  height: 76px;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+nav > a:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-family: "Syne", sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+nav > a:first-child span:first-child {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--secondary)
+  );
+  box-shadow: 0 8px 28px rgba(117, 108, 255, 0.25);
+}
+
+nav > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+nav > div a {
+  padding: 10px 18px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+nav > div a:hover {
+  color: var(--text);
+}
+
+nav > div a:last-child {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+nav > div a:last-child:hover {
+  background: #665de8;
+  transform: translateY(-1px);
+}
+
+/* ======================================================
+   Hero section
+====================================================== */
+
+#hero {
+  min-height: calc(100vh - 76px);
+  padding-block: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#hero::before {
+  content: "";
+  width: 480px;
+  height: 480px;
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgba(117, 108, 255, 0.13);
+  filter: blur(100px);
+  transform: translateX(-50%);
+}
+
+#hero > p:first-child {
+  margin-bottom: 22px;
+  padding: 8px 15px;
+  border: 1px solid rgba(117, 108, 255, 0.25);
+  border-radius: 999px;
+  background: rgba(117, 108, 255, 0.08);
+  color: var(--primary-light);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.17em;
+}
+
+#hero h1 {
+  max-width: 950px;
+  margin-bottom: 24px;
+  font-family: "Syne", sans-serif;
+  font-size: clamp(2.8rem, 7vw, 5.7rem);
+  line-height: 1.02;
+  letter-spacing: -0.06em;
+}
+
+#hero h1::first-line {
+  color: var(--text);
+}
+
+#hero h1 + p {
+  max-width: 690px;
+  margin-bottom: 36px;
+  color: var(--muted);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+}
+
+#hero > div {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+#hero > div a {
+  min-width: 175px;
+  padding: 14px 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  font-weight: 700;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+#hero > div a:first-child {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 12px 34px rgba(117, 108, 255, 0.25);
+}
+
+#hero > div a:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+#hero > div a:first-child:hover {
+  background: #665de8;
+}
+
+#hero > p:last-child {
+  color: var(--dark-muted);
+  font-size: 0.86rem;
+}
+
+/* ======================================================
+   Features section
+====================================================== */
+
+#features {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#features > div:first-child {
+  margin-bottom: 50px;
+}
+
+#features > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+}
+
+#features article {
+  padding: 34px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(
+    145deg,
+    rgba(23, 23, 34, 0.95),
+    rgba(17, 17, 25, 0.82)
+  );
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+#features article:hover {
+  border-color: rgba(117, 108, 255, 0.5);
+  transform: translateY(-4px);
+}
+
+#features article > div {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(117, 108, 255, 0.12);
+  font-size: 1.45rem;
+}
+
+#features article h3 {
+  margin-bottom: 10px;
+  font-family: "Syne", sans-serif;
+  font-size: 1.25rem;
+}
+
+#features article p {
+  color: var(--muted);
+}
+
+/* ======================================================
+   How it works
+====================================================== */
+
+#how-it-works > div:first-child {
+  margin-bottom: 50px;
+}
+
+#how-it-works > div:nth-child(2) {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+#how-it-works article {
+  position: relative;
+  padding: 28px;
+  border-top: 2px solid var(--primary);
+  border-radius: 0 0 16px 16px;
+  background: var(--surface);
+}
+
+#how-it-works article span {
+  display: block;
+  margin-bottom: 30px;
+  color: var(--primary-light);
+  font-family: "Syne", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  opacity: 0.8;
+}
+
+#how-it-works article h3 {
+  margin-bottom: 10px;
+  font-family: "Syne", sans-serif;
+  font-size: 1.12rem;
+}
+
+#how-it-works article p {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+#how-it-works > div:last-child {
+  margin-top: 40px;
+}
+
+#how-it-works > div:last-child a {
+  display: inline-block;
+  padding: 14px 24px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+#how-it-works > div:last-child a:hover {
+  background: #665de8;
+  transform: translateY(-2px);
+}
+
+/* ======================================================
+   Become a mentor
+====================================================== */
+
+#become-a-mentor {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  align-items: center;
+  gap: 70px;
+}
+
+#become-a-mentor > div:first-child > p:nth-of-type(2) {
+  margin-bottom: 28px;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+#become-a-mentor ul {
+  margin-bottom: 34px;
+  display: grid;
+  gap: 13px;
+}
+
+#become-a-mentor li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+}
+
+#become-a-mentor li::before {
+  content: "✓";
+  width: 23px;
+  height: 23px;
+  flex: 0 0 23px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(117, 108, 255, 0.15);
+  color: var(--primary-light);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+#become-a-mentor > div:first-child > a {
+  display: inline-block;
+  padding: 14px 24px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+#become-a-mentor > div:first-child > a:hover {
+  background: #665de8;
+  transform: translateY(-2px);
+}
+
+#become-a-mentor > div:last-child article {
+  padding: 45px;
+  border: 1px solid rgba(255, 101, 132, 0.24);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(255, 101, 132, 0.14),
+      transparent 45%
+    ),
+    var(--surface);
+}
+
+#become-a-mentor article span {
+  display: block;
+  margin-bottom: 28px;
+  font-size: 3rem;
+}
+
+#become-a-mentor article h3 {
+  margin-bottom: 15px;
+  font-family: "Syne", sans-serif;
+  font-size: 1.7rem;
+  line-height: 1.25;
+}
+
+#become-a-mentor article p {
+  color: var(--muted);
+}
+
+/* ======================================================
+   Why WordComet
+====================================================== */
+
+#why-wordcomet > div:first-child {
+  margin-bottom: 50px;
+}
+
+#why-wordcomet > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+#why-wordcomet article {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: rgba(17, 17, 25, 0.72);
+}
+
+#why-wordcomet article span {
+  display: inline-block;
+  margin-bottom: 18px;
+  font-size: 1.7rem;
+}
+
+#why-wordcomet article h3 {
+  margin-bottom: 9px;
+  font-family: "Syne", sans-serif;
+  font-size: 1.08rem;
+}
+
+#why-wordcomet article p {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+/* ======================================================
+   Safety and expectations
+====================================================== */
+
+#safety {
+  padding-bottom: 130px;
+}
+
+#safety > div:first-child {
+  margin-bottom: 45px;
+}
+
+#safety > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+#safety article {
+  padding: 27px;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+#safety article > span {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(117, 108, 255, 0.12);
+  font-size: 1.2rem;
+}
+
+#safety article h3 {
+  margin-bottom: 6px;
+  font-family: "Syne", sans-serif;
+  font-size: 1.05rem;
+}
+
+#safety article p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ======================================================
+   Footer
+====================================================== */
+
+footer {
+  min-height: 100px;
+  padding: 30px max(20px, calc((100% - var(--container)) / 2));
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+footer a {
+  color: var(--primary-light);
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+/* ======================================================
+   Tablet
+====================================================== */
+
+@media (max-width: 900px) {
+  :root {
+    --section-spacing: 85px;
+  }
+
+  #how-it-works > div:nth-child(2) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  #become-a-mentor {
+    grid-template-columns: 1fr;
+    gap: 45px;
+  }
+
+  #why-wordcomet > div:last-child {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ======================================================
+   Mobile
+====================================================== */
+
+@media (max-width: 640px) {
+  :root {
+    --section-spacing: 70px;
+  }
+
+  section,
+  nav {
+    width: min(100% - 28px, var(--container));
+  }
+
+  nav {
+    height: 68px;
+  }
+
+  nav > a:first-child {
+    font-size: 1.1rem;
+  }
+
+  nav > a:first-child span:first-child {
+    width: 36px;
+    height: 36px;
+  }
+
+  nav > div {
+    gap: 6px;
+  }
+
+  nav > div a {
+    padding: 9px 11px;
+    font-size: 0.82rem;
+  }
+
+  nav > div a:first-child {
+    display: none;
+  }
+
+  #hero {
+    min-height: calc(100vh - 68px);
+    padding-block: 75px;
+  }
+
+  #hero h1 {
+    font-size: clamp(2.5rem, 13vw, 4rem);
+  }
+
+  #hero h1 br {
+    display: none;
+  }
+
+  #hero > div {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  #hero > div a {
+    width: 100%;
+  }
+
+  #features > div:last-child,
+  #how-it-works > div:nth-child(2),
+  #why-wordcomet > div:last-child,
+  #safety > div:last-child {
+    grid-template-columns: 1fr;
+  }
+
+  #features article,
+  #become-a-mentor > div:last-child article {
+    padding: 27px;
+  }
+
+  #safety article {
+    padding: 22px;
+  }
+
+  footer {
+    flex-direction: column;
+    text-align: center;
+  }
+}

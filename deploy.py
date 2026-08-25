@@ -19,7 +19,7 @@ import httpx
 import uuid
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from notification_store import (
     fcm_tokens,
     fcm_countries,
@@ -203,7 +203,11 @@ class WordInput(BaseModel):
 
 @app.get("/")
 def root():
-    return FileResponse(os.path.join(BASE_DIR, "static", "login.html"))
+    return FileResponse(os.path.join(BASE_DIR, "static", "index.html"))
+
+@app.get("/index.html")
+def redirect_index():
+    return RedirectResponse(url="/", status_code=301)
 
 @app.get("/word-of-the-day")
 def get_word():
