@@ -33,9 +33,16 @@
             <div>
                 <label for="mentorDesignation">Domains / Designations</label>
 
-                <select id="mentorDesignation" multiple>
-                    <option value="">Select Domain</option>
-                </select>
+                <div class="domain-multiselect" id="domainMultiselect">
+                    <button type="button" id="domainDropdownButton">
+                        Select one or more domains
+                        <span>▼</span>
+                    </button>
+
+                    <div id="domainCheckboxList" class="domain-checkbox-list">
+                        <!-- Domain checkboxes are added by JavaScript -->
+                    </div>
+                </div>
             </div>
 
             <br>
@@ -472,19 +479,28 @@ async function loadMentorDesignations() {
     try {
         const data = await api("/mentor/domain/List");
 
-        const dropdown =
-            document.getElementById("mentorDesignation");
+        const checkboxList =
+            document.getElementById("domainCheckboxList");
 
-        dropdown.innerHTML =
-            `<option value="">Select Domain</option>`;
+        checkboxList.innerHTML = "";
 
         data.domains.forEach(domain => {
-            const option = document.createElement("option");
+            const label = document.createElement("label");
+            label.className = "domain-checkbox-option";
 
-            option.value = domain;
-            option.textContent = domain;
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = domain;
+            checkbox.className = "mentor-designation-checkbox";
 
-            dropdown.appendChild(option);
+            checkbox.addEventListener("change", updateDomainButtonText);
+
+            const text = document.createElement("span");
+            text.textContent = domain;
+
+            label.appendChild(checkbox);
+            label.appendChild(text);
+            checkboxList.appendChild(label);
         });
 
     } catch (err) {
@@ -492,19 +508,63 @@ async function loadMentorDesignations() {
     }
 }
 
+function updateDomainButtonText() {
+    const selectedDomains = Array.from(
+        document.querySelectorAll(
+            ".mentor-designation-checkbox:checked"
+        )
+    ).map(checkbox => checkbox.value);
+
+    const button = document.getElementById("domainDropdownButton");
+
+    if (selectedDomains.length === 0) {
+        button.firstChild.textContent =
+            "Select one or more domains ";
+    } else if (selectedDomains.length <= 2) {
+        button.firstChild.textContent =
+            selectedDomains.join(", ") + " ";
+    } else {
+        button.firstChild.textContent =
+            `${selectedDomains.length} domains selected `;
+    }
+}
+
+document
+    .getElementById("domainDropdownButton")
+    .addEventListener("click", function () {
+        document
+            .getElementById("domainCheckboxList")
+            .classList.toggle("show");
+    });
+
+document.addEventListener("click", function (event) {
+    const multiselect =
+        document.getElementById("domainMultiselect");
+
+    if (!multiselect.contains(event.target)) {
+        document
+            .getElementById("domainCheckboxList")
+            .classList.remove("show");
+    }
+});
+
 function fillMentorProfile() {
     document.getElementById("mentorFullName").value =
         currentUser.full_name || "";
 
     const savedDesignations = (currentUser.designation || "")
         .split(",")
-        .map(value => value.trim());
+        .map(value => value.trim())
+        .filter(Boolean);
 
     document
-        .querySelectorAll("#mentorDesignation option")
-        .forEach(option => {
-            option.selected = savedDesignations.includes(option.value);
+        .querySelectorAll(".mentor-designation-checkbox")
+        .forEach(checkbox => {
+            checkbox.checked =
+                savedDesignations.includes(checkbox.value);
         });
+
+    updateDomainButtonText();
 
     document.getElementById("mentorExperienceYears").value =
         currentUser.experience_years ?? "";
@@ -522,10 +582,11 @@ async function saveMentorProfile() {
             document.getElementById("mentorFullName").value.trim();
 
         const designation = Array.from(
-            document.getElementById("mentorDesignation").selectedOptions
+            document.querySelectorAll(
+                ".mentor-designation-checkbox:checked"
+            )
         )
-        .map(option => option.value)
-        .filter(Boolean)
+        .map(checkbox => checkbox.value)
         .join(",");
 
         const experienceYears =
@@ -538,12 +599,12 @@ async function saveMentorProfile() {
             document.getElementById("mentorBio").value.trim();
 
         if (!fullName) {
-            alert("Enter your full name");
+            showToast("Enter your full name");
             return;
         }
 
         if (!designation) {
-            alert("Select your domain");
+            showToast("Select atleast one domain");
             return;
         }
 
@@ -552,7 +613,7 @@ async function saveMentorProfile() {
             experienceMonths < 0 ||
             experienceMonths > 11
         ) {
-            alert("Enter valid experience");
+            showToast("Enter valid experience");
             return;
         }
 
@@ -582,7 +643,7 @@ async function saveMentorProfile() {
             JSON.stringify(currentUser)
         );
 
-        alert("Mentor profile updated successfully");
+        showToast("Mentor profile updated successfully");
 
     } catch (err) {
         showToast(err.message);
@@ -670,7 +731,7 @@ async function disableAvailability(id) {
             body: JSON.stringify({ is_active: false })
         });
 
-        alert("Availability disabled");
+        showToast("Availability disabled");
         loadMyAvailability();
 
     } catch (err) {
@@ -788,7 +849,7 @@ async function loadSlots() {
         const date = document.getElementById("sessionDate").value;
 
         if (!mentorId || !date) {
-            alert("Select mentor and date");
+            showToast("Select mentor and date");
             return;
         }
 
@@ -824,7 +885,7 @@ async function bookSlot(mentorId, availabilityId, sessionDate, startTime, endTim
         const resumeInput = document.getElementById("resumeFile");
 
         if (!resumeInput.files.length) {
-            alert("Please upload resume before booking");
+            showToast("Please upload resume before booking");
             return;
         }
 
@@ -913,7 +974,7 @@ async function cancelBooking(id) {
 function prepareJoinCall(videoRoomId) {
     localStorage.setItem("wc_video_room_id", videoRoomId);
 
-    alert("Room saved: " + videoRoomId + "\nNow connect this to your existing WebRTC code.");
+    showToast("Room saved: " + videoRoomId + "\nNow connect this to your existing WebRTC code.");
 
     document.getElementById("videoModal").style.display = "block";
 
