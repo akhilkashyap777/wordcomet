@@ -35,10 +35,12 @@
 
                 <div class="domain-multiselect" id="domainMultiselect">
                     <button type="button" id="domainDropdownButton">
-                        Select one or more domains
-                        <span>▼</span>
-                    </button>
+                        <span id="selectedDomainsDisplay" class="selected-domains-display">
+                            <span class="domain-placeholder">Select one or more domains</span>
+                        </span>
 
+                        <span class="domain-dropdown-arrow">▼</span>
+                    </button>
                     <div id="domainCheckboxList" class="domain-checkbox-list">
                         <!-- Domain checkboxes are added by JavaScript -->
                     </div>
@@ -509,24 +511,54 @@ async function loadMentorDesignations() {
 }
 
 function updateDomainButtonText() {
-    const selectedDomains = Array.from(
+    const selectedCheckboxes = Array.from(
         document.querySelectorAll(
             ".mentor-designation-checkbox:checked"
         )
-    ).map(checkbox => checkbox.value);
+    );
 
-    const button = document.getElementById("domainDropdownButton");
+    const display =
+        document.getElementById("selectedDomainsDisplay");
 
-    if (selectedDomains.length === 0) {
-        button.firstChild.textContent =
-            "Select one or more domains ";
-    } else if (selectedDomains.length <= 2) {
-        button.firstChild.textContent =
-            selectedDomains.join(", ") + " ";
-    } else {
-        button.firstChild.textContent =
-            `${selectedDomains.length} domains selected `;
+    display.innerHTML = "";
+
+    if (selectedCheckboxes.length === 0) {
+        display.innerHTML =
+            `<span class="domain-placeholder">
+                Select one or more domains
+            </span>`;
+
+        return;
     }
+
+    selectedCheckboxes.forEach(checkbox => {
+        const tag = document.createElement("span");
+        tag.className = "selected-domain-tag";
+
+        const name = document.createElement("span");
+        name.textContent = checkbox.value;
+
+        const remove = document.createElement("span");
+        remove.className = "remove-domain-tag";
+        remove.textContent = "×";
+        remove.setAttribute("role", "button");
+        remove.setAttribute("tabindex", "0");
+        remove.setAttribute(
+            "aria-label",
+            `Remove ${checkbox.value}`
+        );
+
+        remove.addEventListener("click", event => {
+            event.stopPropagation();
+
+            checkbox.checked = false;
+            updateDomainButtonText();
+        });
+
+        tag.appendChild(name);
+        tag.appendChild(remove);
+        display.appendChild(tag);
+    });
 }
 
 document

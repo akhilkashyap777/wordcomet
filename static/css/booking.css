@@ -989,16 +989,63 @@ input::placeholder {
 #domainDropdownButton {
     width: 100%;
     min-height: 48px;
-    padding: 12px 16px;
+    padding: 8px 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
     color: inherit;
     background: inherit;
     border: 1px solid #353548;
     border-radius: 12px;
     cursor: pointer;
     text-align: left;
+}
+
+.selected-domains-display {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 7px;
+    align-items: center;
+}
+
+.domain-placeholder {
+    color: #b8b8c8;
+}
+
+.selected-domain-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 9px;
+    color: #ffffff;
+    background: rgba(132, 94, 247, 0.22);
+    border: 1px solid #7c5cff;
+    border-radius: 20px;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.remove-domain-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.remove-domain-tag:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.domain-dropdown-arrow {
+    flex-shrink: 0;
 }
 
 .domain-checkbox-list {
