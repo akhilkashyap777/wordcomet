@@ -1211,7 +1211,9 @@ def get_mentors_by_designation(
             FROM users
             WHERE role = 'mentor'
               AND is_active = TRUE
-              AND designation = %s
+              AND %s = ANY(
+                regexp_split_to_array(designation, '\s*,\s*')
+            )
             ORDER BY average_rating DESC, rating_count DESC, id ASC
             """,
             (designation,),

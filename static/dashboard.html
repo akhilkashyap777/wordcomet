@@ -32,7 +32,7 @@
 
         <hr>
 
-        <section>
+        <section hidden>
             <h2>Current Mentorship Session</h2>
 
             <div id="noActiveBooking">
@@ -101,7 +101,7 @@
 
         <hr>
 
-        <section>
+        <section hidden>
             <h2>Friends</h2>
 
             <p>
@@ -120,7 +120,7 @@
 
         <hr>
 
-        <section>
+        <section hidden>
             <h2>Pending Friend Requests</h2>
 
             <p>
@@ -678,7 +678,7 @@
             );
 
             await Promise.all([
-                loadCurrentBooking(),
+                // loadCurrentBooking(),
                 loadUpcomingBookings(),
                 loadPendingFriendRequests(),
                 loadFriendsPreview(),
@@ -715,7 +715,8 @@
             showRoleSections();
 
             await Promise.all([
-                loadCurrentBooking(),
+                // loadCurrentBooking(),
+                loadUpcomingBookings(),
                 loadMentorAvailability(),
                 loadFriendsPreview(),
                 loadPendingFriendRequests()
@@ -876,6 +877,14 @@
         "click",
         cancelActiveBooking
     );
+
+    document.getElementById("openBookingBtn").addEventListener("click", () => {
+        window.location.href = "booking.html";
+    });
+
+    document.getElementById("bookMentorBtn").addEventListener("click", () => {
+        window.location.href = "booking.html";
+    });
 
     onAuthStateChanged(auth, async user => {
         if (!user) {

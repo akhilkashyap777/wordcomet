@@ -31,9 +31,9 @@
             <br>
 
             <div>
-                <label for="mentorDesignation">Domain / Designation</label>
+                <label for="mentorDesignation">Domains / Designations</label>
 
-                <select id="mentorDesignation">
+                <select id="mentorDesignation" multiple>
                     <option value="">Select Domain</option>
                 </select>
             </div>
@@ -496,8 +496,15 @@ function fillMentorProfile() {
     document.getElementById("mentorFullName").value =
         currentUser.full_name || "";
 
-    document.getElementById("mentorDesignation").value =
-        currentUser.designation || "";
+    const savedDesignations = (currentUser.designation || "")
+        .split(",")
+        .map(value => value.trim());
+
+    document
+        .querySelectorAll("#mentorDesignation option")
+        .forEach(option => {
+            option.selected = savedDesignations.includes(option.value);
+        });
 
     document.getElementById("mentorExperienceYears").value =
         currentUser.experience_years ?? "";
@@ -514,8 +521,12 @@ async function saveMentorProfile() {
         const fullName =
             document.getElementById("mentorFullName").value.trim();
 
-        const designation =
-            document.getElementById("mentorDesignation").value;
+        const designation = Array.from(
+            document.getElementById("mentorDesignation").selectedOptions
+        )
+        .map(option => option.value)
+        .filter(Boolean)
+        .join(",");
 
         const experienceYears =
             Number(document.getElementById("mentorExperienceYears").value);
@@ -870,7 +881,7 @@ async function loadMyBookings() {
                 <td>
                     ${b.status === "booked"
                         ? `<button onclick="cancelBooking(${b.id})">Cancel</button>`
-                        : "-"
+                        : "Cancelled"
                     }
                 </td>
             `;
@@ -889,8 +900,8 @@ async function cancelBooking(id) {
             method: "PATCH"
         });
 
-        alert("Booking cancelled");
-        loadMyBookings();
+        showToast("Booking cancelled", "success");
+        await loadMyBookings();
 
     } catch (err) {
         showToast(err.message);
