@@ -716,3 +716,76 @@ footer a:hover {
     text-align: center;
   }
 }
+
+/* ======================================================
+   Mobile apps
+====================================================== */
+
+#mobile-apps {
+  text-align: center;
+}
+
+#mobile-apps > div {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+#mobile-apps h2 {
+  margin-bottom: 16px;
+}
+
+#mobile-apps > div > p:last-of-type {
+  max-width: 650px;
+  margin: 0 auto;
+  color: var(--muted);
+}
+
+#appStoreLinks {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.app-download-link {
+  min-width: 220px;
+  padding: 15px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+  color: white;
+  text-align: left;
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.app-download-link:hover {
+  border-color: var(--primary);
+  transform: translateY(-3px);
+}
+
+.app-platform-icon {
+  font-size: 2rem;
+}
+
+.app-download-link small,
+.app-download-link strong {
+  display: block;
+}
+
+.app-download-link small {
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.app-download-link strong {
+  font-family: "Syne", sans-serif;
+  font-size: 1rem;
+}

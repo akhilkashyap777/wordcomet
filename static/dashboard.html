@@ -82,7 +82,6 @@
                     
                 </div>
 
-                <button id="joinSessionBtn" type="button">Join Session</button>
                 <button id="cancelBookingBtn" type="button">Cancel Booking</button>
             </div>
         </section>
@@ -841,33 +840,10 @@
         }
     }
 
-    function joinActiveSession() {
-        if (!activeBookingData?.video_room_id) {
-            setError("The booking does not contain a video room ID.");
-            return;
-        }
-
-        localStorage.setItem(
-            "wc_video_room_id",
-            activeBookingData.video_room_id
-        );
-
-        localStorage.setItem(
-            "wc_active_booking",
-            JSON.stringify(activeBookingData)
-        );
-
-        window.location.href = "session.html";
-    }
-
     document.getElementById("refreshBtn").addEventListener("click", () => {
         loadDashboard();
     });
 
-    document.getElementById("joinSessionBtn").addEventListener(
-        "click",
-        joinActiveSession
-    );
     document.getElementById("uploadResumeBtn").addEventListener(
         "click",
         uploadResume

@@ -45,6 +45,18 @@
                         playsinline>
                     </video>
 
+                    <div id="remotePlaceholder" class="remote-placeholder">
+                        <div class="remote-placeholder-icon">👤</div>
+
+                        <h3 id="remotePlaceholderTitle">
+                            Waiting for participant
+                        </h3>
+
+                        <p id="remotePlaceholderMessage">
+                            The other participant has not joined yet.
+                        </p>
+                    </div>
+
                     <div class="self-preview">
 
                         <div class="self-preview-label">
@@ -212,13 +224,25 @@ const API_BASE = "https://wordcomet.shyapsneon.tech";
 
 let ROOM_ID = null;
 let WS_URL = null;
+let currentUserRole = null;
 
 let websocket;
 let peerConnection;
 let localStream;
 
+let pendingIceCandidates = [];
+
 let localVideo = document.getElementById("localVideo");
 let remoteVideo = document.getElementById("remoteVideo");
+
+const remotePlaceholder =
+    document.getElementById("remotePlaceholder");
+
+const remotePlaceholderTitle =
+    document.getElementById("remotePlaceholderTitle");
+
+const remotePlaceholderMessage =
+    document.getElementById("remotePlaceholderMessage");
 
 const muteBtn = document.getElementById("muteBtn");
 const chatMessages = document.getElementById("chatMessages");
@@ -303,7 +327,13 @@ async function start() {
 
     const bookingData = await bookingResponse.json();
 
-    ROOM_ID = bookingData.bookings[0].video_room_id;
+    const activeBooking = bookingData.bookings[0];
+
+    currentUserRole = activeBooking.mentor_name
+        ? "mentee"
+        : "mentor";
+
+    ROOM_ID = activeBooking.video_room_id;
 
     WS_URL = `wss://wordcomet.shyapsneon.tech/ws/chat/${ROOM_ID}`;
 
@@ -337,6 +367,8 @@ async function start() {
 
         remoteVideo.srcObject = event.streams[0];
 
+        remotePlaceholder.style.display = "none";
+
     };
 
     localStream = await navigator.mediaDevices.getUserMedia({
@@ -357,6 +389,24 @@ async function start() {
     });
 
     connectWebSocket();
+
+}
+
+async function addPendingIceCandidates() {
+
+    while (pendingIceCandidates.length > 0) {
+
+        const candidate = pendingIceCandidates.shift();
+
+        try {
+            await peerConnection.addIceCandidate(
+                new RTCIceCandidate(candidate)
+            );
+        } catch (error) {
+            console.error("Failed to add queued ICE candidate:", error);
+        }
+
+    }
 
 }
 
@@ -419,6 +469,8 @@ function connectWebSocket() {
                     new RTCSessionDescription(message.sdp)
                 );
 
+                await addPendingIceCandidates();
+
                 const answer = await peerConnection.createAnswer();
 
                 await peerConnection.setLocalDescription(answer);
@@ -436,23 +488,54 @@ function connectWebSocket() {
                     new RTCSessionDescription(message.sdp)
                 );
 
+                await addPendingIceCandidates();
+
                 break;
 
             case "ice_candidate":
 
-                if (message.candidate) {
+                if (!message.candidate) {
+                    break;
+                }
 
-                    await peerConnection.addIceCandidate(
-                        new RTCIceCandidate(message.candidate)
-                    );
+                if (!peerConnection.remoteDescription) {
+
+                    pendingIceCandidates.push(message.candidate);
+
+                } else {
+
+                    try {
+                        await peerConnection.addIceCandidate(
+                            new RTCIceCandidate(message.candidate)
+                        );
+                    } catch (error) {
+                        console.error("Failed to add ICE candidate:", error);
+                    }
 
                 }
 
                 break;
 
+
             case "peer_left":
 
                 console.log("Peer left");
+
+                if (remoteVideo.srcObject) {
+                    remoteVideo.srcObject
+                        .getTracks()
+                        .forEach(track => track.stop());
+                }
+
+                remoteVideo.srcObject = null;
+
+                remotePlaceholderTitle.textContent =
+                    "Participant Left";
+
+                remotePlaceholderMessage.textContent =
+                    "The other participant left the call. They may rejoin shortly. Keep this page open.";
+
+                remotePlaceholder.style.display = "flex";
 
                 break;
 
@@ -460,7 +543,10 @@ function connectWebSocket() {
 
                 chatMessages.innerHTML += `
                     <div>
-                        <strong>Peer:</strong> ${message.message}
+                        <strong>
+                            ${message.sender_role === "mentor" ? "Mentor" : "Mentee"}:
+                        </strong>
+                        ${message.message}
                     </div>
                 `;
 
@@ -527,8 +613,8 @@ cameraBtn.addEventListener("click", () => {
     videoTrack.enabled = !videoTrack.enabled;
 
     cameraLabel.textContent = videoTrack.enabled
-        ? "Camera"
-        : "Camera Off";
+        ? "Camera Off"
+        : "Camera On";
 
     cameraBtn.classList.toggle(
         "control-btn-off",
@@ -740,6 +826,7 @@ sendChatBtn.addEventListener("click", async () => {
 
         websocket.send(JSON.stringify({
             type: "chat",
+            sender_role: currentUserRole,
             message: message
         }));
 
