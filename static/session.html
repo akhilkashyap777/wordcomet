@@ -180,6 +180,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+onAuthStateChanged(auth, user => {
+    if (!user) {
+        localStorage.removeItem("wc_id_token");
+        localStorage.removeItem("wc_user");
+        localStorage.removeItem("wc_firebase_uid");
+
+        window.location.replace("login.html");
+    }
+});
+
 async function loadTopbar() {
     try {
         const response = await fetch("topbar.html");
@@ -261,10 +271,26 @@ const fullscreenLabel = document.getElementById("fullscreenLabel");
 
 let screenStream = null;
 let isScreenSharing = false;
+let isJoining = false;
 
 async function start() {
 
+    if (isJoining) return;
+
+    isJoining = true;
+    joinBtn.disabled = true;
+    joinBtn.textContent = "Joining...";
+
     const idToken = localStorage.getItem("wc_id_token");
+
+    if (!idToken) {
+        window.location.replace("login.html");
+        return;
+    }
+
+    try {
+        console.time("Total join time");
+        console.time("Booking request");
 
     const bookingResponse = await fetch(`${API_BASE}/mentor/bookings/me`, {
         headers: {
@@ -339,7 +365,16 @@ async function start() {
 
     console.log("Room ID:", ROOM_ID);
 
-    console.log("Fetching TURN credentials...");
+    console.log("Opening camera and fetching TURN credentials...");
+
+    const mediaPromise = navigator.mediaDevices.getUserMedia({
+        video: {
+            width: { ideal: 854 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 24, max: 24 }
+        },
+        audio: true
+    });
 
     const turnResponse = await fetch(`${API_BASE}/turn-credentials`);
     const turnData = await turnResponse.json();
@@ -371,10 +406,7 @@ async function start() {
 
     };
 
-    localStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-    });
+    localStream = await mediaPromise;
 
     localVideo.srcObject = localStream;
     muteBtn.disabled = false;
@@ -390,7 +422,20 @@ async function start() {
 
     connectWebSocket();
 
+    } catch (error) {
+        console.error("Could not join call:", error);
+
+        isJoining = false;
+        joinBtn.disabled = false;
+        joinBtn.textContent = "Try Again";
+
+        showToast(
+            error.message || "Could not join the video call.",
+            "error"
+        );
+    }
 }
+
 
 async function addPendingIceCandidates() {
 
@@ -778,6 +823,24 @@ endCallBtn.addEventListener("click", () => {
 
 // });
 
+function showToast(message, type = "error") {
+    const existingToast = document.querySelector(".session-toast");
+
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement("div");
+    toast.className = `session-toast ${type}`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
 sendChatBtn.addEventListener("click", async () => {
 
     const message = chatInput.value.trim();
@@ -785,8 +848,8 @@ sendChatBtn.addEventListener("click", async () => {
 
     if (!message && !file) return;
 
-    if (websocket.readyState !== WebSocket.OPEN) {
-        alert("Chat is not connected.");
+    if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+        showToast("Chat is not connected.", "error");
         return;
     }
 

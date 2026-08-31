@@ -910,3 +910,20 @@ body::after {
     margin: 0;
     color: #cbd5e1;
 }
+
+.session-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 12px 18px;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.session-toast.error {
+    background-color: #dc2626;
+}
