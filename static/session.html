@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mock Interview Session</title>
     <link rel="stylesheet" href="css/session.css">
 </head>
@@ -272,10 +273,12 @@ const fullscreenLabel = document.getElementById("fullscreenLabel");
 let screenStream = null;
 let isScreenSharing = false;
 let isJoining = false;
+let intentionalClose = false;
 
 async function start() {
 
     if (isJoining) return;
+    intentionalClose = false;
 
     isJoining = true;
     joinBtn.disabled = true;
@@ -336,7 +339,9 @@ async function start() {
 
         document
             .getElementById("retryBtn")
-            .addEventListener("click", start);
+            .addEventListener("click", () => {
+                window.location.reload();
+            });
 
         document
             .getElementById("backToSessionBtn")
@@ -471,6 +476,26 @@ function connectWebSocket() {
 
         console.log("Disconnected");
 
+        if (intentionalClose) return;
+
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+
+        websocket = null;
+        isJoining = false;
+
+        joinBtn.disabled = false;
+        joinBtn.textContent = "Try Again";
+
+        showToast("Call connection was lost. Please try again.", "error");
+
     };
 
     websocket.onerror = (e) => {
@@ -495,7 +520,9 @@ function connectWebSocket() {
 
                 if (message.should_create_offer) {
 
-                    const offer = await peerConnection.createOffer();
+                    const offer = await peerConnection.createOffer({
+                        iceRestart: true
+                    });
 
                     await peerConnection.setLocalDescription(offer);
 
@@ -565,6 +592,8 @@ function connectWebSocket() {
             case "peer_left":
 
                 console.log("Peer left");
+
+                pendingIceCandidates = [];
 
                 if (remoteVideo.srcObject) {
                     remoteVideo.srcObject
@@ -781,6 +810,7 @@ endCallBtn.addEventListener("click", () => {
     }
 
     if (websocket) {
+        intentionalClose = true;
         websocket.close();
         websocket = null;
     }
@@ -800,6 +830,13 @@ endCallBtn.addEventListener("click", () => {
     muteBtn.classList.remove("control-btn-off");
     cameraBtn.classList.remove("control-btn-off");
     screenShareBtn.classList.remove("control-btn-off");
+
+    pendingIceCandidates = [];
+    isScreenSharing = false;
+    isJoining = false;
+
+    joinBtn.disabled = false;
+    joinBtn.textContent = "Rejoin Video Call";
 });
 
 // sendChatBtn.addEventListener("click", () => {

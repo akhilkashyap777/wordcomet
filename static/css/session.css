@@ -927,3 +927,72 @@ body::after {
 .session-toast.error {
     background-color: #dc2626;
 }
+
+@media (max-width: 700px) {
+    body {
+        padding: 12px;
+        align-items: stretch;
+    }
+
+    #app,
+    #topbarContainer,
+    .video-call-page {
+        width: 100%;
+    }
+
+    .video-call-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .main-video-frame {
+        min-height: 0;
+        aspect-ratio: 4 / 3;
+        border-radius: 14px;
+    }
+
+    .main-video-frame > video {
+        min-height: 0;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .self-preview {
+        width: 110px;
+        right: 8px;
+        bottom: 82px;
+        border-radius: 10px;
+    }
+
+    .call-controls {
+        width: calc(100% - 16px);
+        bottom: 8px;
+        gap: 4px;
+        padding: 6px;
+    }
+
+    .control-btn {
+        min-height: 52px;
+        padding: 6px 2px;
+        font-size: 0.56rem;
+    }
+
+    .control-icon {
+        font-size: 0.95rem;
+    }
+
+    .remote-placeholder {
+        padding: 16px;
+    }
+
+    .remote-placeholder-icon {
+        font-size: 36px;
+    }
+
+    .remote-placeholder h3 {
+        font-size: 17px;
+    }
+
+    .remote-placeholder p {
+        font-size: 13px;
+    }
+}
