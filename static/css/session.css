@@ -424,7 +424,7 @@ body::after {
 
 .main-video-frame {
     width: 100%;
-    min-height: 600px;
+    height: clamp(380px, calc(100vh - 300px), 520px);
     position: relative;
     overflow: hidden;
     background:
@@ -512,7 +512,22 @@ body::after {
     box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(14px);
 
-    transform: translateX(-50%);
+    transform: translate(-50%, 10px);
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 10px);
+    transition:
+        opacity 0.25s ease,
+        transform 0.25s ease,
+        visibility 0.25s ease;
+}
+
+.main-video-frame:hover .call-controls,
+.call-controls:focus-within {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
 }
 
 .control-btn {
@@ -945,7 +960,7 @@ body::after {
     }
 
     .main-video-frame {
-        min-height: 0;
+        height: clamp(380px, calc(100vh - 300px), 520px);
         aspect-ratio: 4 / 3;
         border-radius: 14px;
     }
@@ -994,5 +1009,13 @@ body::after {
 
     .remote-placeholder p {
         font-size: 13px;
+    }
+}
+
+@media (hover: none) {
+    .call-controls {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, 0);
     }
 }

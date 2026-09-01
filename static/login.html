@@ -305,6 +305,10 @@
   const auth        = getAuth(firebaseApp);
   const provider    = new GoogleAuthProvider();
 
+  provider.setCustomParameters({
+    prompt: "select_account"
+  });
+
   function showError(msg) {
     const el = document.getElementById("errorMsg");
     el.textContent = msg;
