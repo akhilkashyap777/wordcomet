@@ -1,0 +1,201 @@
+/* Dark background behind popup */
+.howto-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(5px);
+}
+
+/* JS will add this class when opening */
+.howto-overlay.show {
+    display: flex;
+}
+
+
+/* Main popup box */
+.howto-modal {
+    width: min(760px, 95vw);
+    max-height: 88vh;
+
+    overflow: hidden;
+
+    background: #111827;
+    color: #f8fafc;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+
+/* Popup header */
+.howto-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    padding: 22px 24px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.howto-header h2 {
+    margin: 4px 0 0;
+    font-size: 1.4rem;
+}
+
+.howto-label {
+    margin: 0;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+
+    opacity: 0.65;
+}
+
+
+/* X close button */
+.howto-close {
+    width: 38px;
+    height: 38px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.07);
+    color: white;
+
+    font-size: 1.6rem;
+    cursor: pointer;
+}
+
+.howto-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+
+/* Scrollable popup content */
+.howto-content {
+    max-height: calc(88vh - 85px);
+    overflow-y: auto;
+
+    padding: 24px;
+}
+
+
+/* Intro */
+.guide-intro {
+    margin-bottom: 26px;
+}
+
+.guide-intro h3 {
+    margin: 0 0 8px;
+    font-size: 1.3rem;
+}
+
+.guide-intro p {
+    margin: 0;
+    line-height: 1.65;
+    opacity: 0.75;
+}
+
+
+/* Individual steps */
+.guide-step {
+    display: flex;
+    gap: 18px;
+
+    padding: 20px 0;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.guide-step > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.08);
+
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.guide-step h3 {
+    margin: 0 0 7px;
+    font-size: 1rem;
+}
+
+.guide-step p {
+    margin: 0;
+    line-height: 1.6;
+    opacity: 0.75;
+}
+
+.guide-step ul {
+    margin: 10px 0 0;
+    padding-left: 20px;
+
+    line-height: 1.7;
+    opacity: 0.75;
+}
+
+
+/* Error */
+#guideError {
+    padding: 16px;
+    border-radius: 10px;
+
+    background: rgba(255, 80, 80, 0.1);
+
+    text-align: center;
+}
+
+
+/* Mobile */
+@media (max-width: 600px) {
+
+    .howto-overlay {
+        padding: 12px;
+    }
+
+    .howto-modal {
+        max-height: 92vh;
+        border-radius: 14px;
+    }
+
+    .howto-header {
+        padding: 18px;
+    }
+
+    .howto-content {
+        padding: 18px;
+        max-height: calc(92vh - 80px);
+    }
+
+    .guide-step {
+        gap: 12px;
+    }
+
+    .guide-step > span {
+        width: 36px;
+        height: 36px;
+    }
+}

@@ -228,9 +228,43 @@
     border-color: rgba(108,99,255,0.4);
     box-shadow: 0 0 0 1px rgba(108,99,255,0.2), 0 32px 80px rgba(0,0,0,0.5), 0 0 40px rgba(108,99,255,0.1);
   }
+
+.back-home {
+    position: fixed;
+    top: 24px;
+    left: 28px;
+    z-index: 20;
+
+    color: #ffffff;
+    background: linear-gradient(135deg, #7c5cff, #d946ef);
+
+    text-decoration: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    padding: 10px 16px;
+    border-radius: 10px;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    box-shadow: 0 5px 18px rgba(124, 92, 255, 0.25);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.back-home:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(124, 92, 255, 0.38);
+}
 </style>
 </head>
 <body>
+
+<a href="index.html" class="back-home">← Back to Home</a>
 
 <div class="orb orb1"></div>
 <div class="orb orb2"></div>
