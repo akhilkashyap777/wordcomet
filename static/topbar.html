@@ -1,5 +1,5 @@
 <style>
-    .top-nav {
+.top-nav {
     width: 100%;
     margin-bottom: 28px;
     padding: 14px 18px;
@@ -8,12 +8,11 @@
     align-items: center;
     justify-content: space-between;
 
-    background: rgba(20, 20, 31, 0.72);
-    border: 1px solid var(--border);
+    background: #ffffff;
+    border: 1px solid #dbeaf2;
     border-radius: 16px;
 
-    backdrop-filter: blur(14px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 30px rgba(8, 116, 185, 0.12);
 }
 
 .nav-brand {
@@ -23,33 +22,14 @@
     text-decoration: none;
 }
 
-.nav-brand-icon {
-    width: 36px;
-    height: 36px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
+.nav-brand-logo {
+    width: 110px;
+    height: 62px;
+    display: block;
+    object-fit: contain;
     border-radius: 10px;
-    background: linear-gradient(
-        135deg,
-        var(--accent),
-        var(--accent-secondary, #ff6584)
-    );
 
-    font-size: 17px;
-}
-
-.nav-brand-text {
-    font-family: "Syne", sans-serif;
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: var(--text);
-}
-
-.nav-brand-text span {
-    color: var(--accent);
+    box-shadow: 0 4px 14px rgba(8, 116, 185, 0.25);
 }
 
 .nav-links {
@@ -57,7 +37,6 @@
     align-items: center;
     gap: 8px;
 }
-
 .nav-link {
     padding: 9px 13px;
 
@@ -65,11 +44,11 @@
     border-radius: 10px;
 
     background: transparent;
-    color: var(--muted);
+    color: #526475;
 
     font-family: "DM Sans", sans-serif;
     font-size: 0.88rem;
-    font-weight: 500;
+    font-weight: 600;
 
     text-decoration: none;
     cursor: pointer;
@@ -81,26 +60,26 @@
 }
 
 .nav-link:hover {
-    color: var(--text);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.08);
+    color: #0874b9;
+    background: #edf8fd;
+    border-color: #bce5f5;
 }
 
 .nav-link.active {
-    color: var(--text);
-    background: var(--accent-soft);
-    border-color: rgba(108, 99, 255, 0.35);
-    box-shadow: inset 0 -2px 0 var(--accent-secondary);
+    color: #0874b9;
+    background: #e8f7fd;
+    border-color: #8dd6ef;
+    box-shadow: inset 0 -3px 0 #ff9518;
 }
 
 .nav-logout {
-    color: #ff8fa3;
+    color: #f05a28;
 }
 
 .nav-logout:hover {
     color: #ffffff;
-    background: rgba(255, 101, 132, 0.15);
-    border-color: rgba(255, 101, 132, 0.25);
+    background: #f05a28;
+    border-color: #f05a28;
 }
 
 @media (max-width: 700px) {
@@ -125,13 +104,11 @@
 
     <a class="nav-brand" href="dashboard.html">
 
-        <div class="nav-brand-icon">
-            ☄️
-        </div>
-
-        <div class="nav-brand-text">
-            Word<span>Comet</span>
-        </div>
+        <img
+            class="nav-brand-logo"
+            src="word_images/wordcomet-logo-final.png"
+            alt="WordComet"
+        >
 
     </a>
 
