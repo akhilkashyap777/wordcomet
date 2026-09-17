@@ -428,7 +428,7 @@
     </div>
 
     <!-- Role -->
-    <div class="field">
+    <div class="field" style="display: none;">
       <label>Role</label>
       <div class="role-grid">
         <div class="role-card" id="roleTeacher" onclick="selectRole('mentor')">
@@ -558,7 +558,7 @@
 
   let currentUser  = null;   // Firebase user
   let profileData  = null;   // DB user row
-  let selectedRole = null;
+  let selectedRole = "mentee";
   let roleIsLocked = false;
 
   // ── Helpers ─────────────────────────────────────────────────────────
@@ -624,8 +624,7 @@
       document.getElementById("pageSubtitle").textContent = "Your role is locked. You can update your display name.";
     } else {
       document.getElementById("pageTitle").textContent    = "Set up your profile";
-      document.getElementById("pageSubtitle").textContent = "Choose your role — this cannot be changed later.";
-    }
+      document.getElementById("pageSubtitle").textContent = "Complete your profile to continue.";    }
   }
 
   // ── Load profile from DB ─────────────────────────────────────────────
