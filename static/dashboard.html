@@ -748,27 +748,86 @@
 
             container.innerHTML = "";
 
-            bookings.forEach(booking => {
+            for (const booking of bookings) {
+
                 const div = document.createElement("div");
 
-                const participant =
-                    profileData.role === "mentor"
-                        ? booking.participant_name
-                        : booking.participant_name;
+                const participant = booking.participant_name || "-";
 
                 div.innerHTML = `
                     <hr>
-                    <p><strong>Booking ID:</strong> ${booking.id}</p>
-                    <p><strong>Date:</strong> ${booking.session_date}</p>
-                    <p><strong>Time:</strong> ${formatTime(booking.start_time)} - ${formatTime(booking.end_time)}</p>
-                    <p><strong>${profileData.role === "mentor" ? "Student" : "Mentor"}:</strong> ${participant}</p>
+
+                    <p>
+                        <strong>Booking ID:</strong>
+                        ${booking.id}
+                    </p>
+
+                    <p>
+                        <strong>Date:</strong>
+                        ${booking.session_date}
+                    </p>
+
+                    <p>
+                        <strong>Time:</strong>
+                        ${formatTime(booking.start_time)} -
+                        ${formatTime(booking.end_time)}
+                    </p>
+
+                    <p>
+                        <strong>
+                            ${profileData.role === "mentor" ? "Student" : "Mentor"}:
+                        </strong>
+                        ${participant}
+                    </p>
                 `;
 
+                /* Only mentor needs to see student's resume */
+                if (profileData.role === "mentor") {
+
+                    try {
+                        const details = await api(
+                            `/mentor/bookings/${booking.id}/student-details`
+                        );
+
+                        const resume = details.resume;
+
+                        const resumeSection = document.createElement("div");
+
+                        if (resume?.is_uploaded) {
+
+                            resumeSection.innerHTML = `
+                                <p>
+                                    <strong>Student Resume:</strong>
+                                    ${resume.filename || "Resume"}
+                                </p>
+                            `;
+
+                        } else {
+
+                            resumeSection.innerHTML = `
+                                <p>
+                                    <strong>Student Resume:</strong>
+                                    Not uploaded
+                                </p>
+                            `;
+                        }
+
+                        div.appendChild(resumeSection);
+
+                    } catch (err) {
+                        console.error(
+                            `Could not load resume for booking ${booking.id}`,
+                            err
+                        );
+                    }
+                }
+
                 container.appendChild(div);
-            });
+            }
 
         } catch (err) {
-            container.innerHTML = "<p>Could not load upcoming bookings.</p>";
+            container.innerHTML =
+                "<p>Could not load upcoming bookings.</p>";
         }
     }
 
