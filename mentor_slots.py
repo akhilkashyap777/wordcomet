@@ -300,6 +300,90 @@ def update_availability(
         conn.close()
 
 
+@router.get("/{mentor_id}/available-slots")
+def get_all_available_slots(mentor_id: int):
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        # Get all active availability from today onwards
+        cur.execute(
+            """
+            SELECT *
+            FROM mentor_availability
+            WHERE mentor_id = %s
+              AND availability_date >= CURRENT_DATE
+              AND is_active = TRUE
+            ORDER BY availability_date, start_time
+            """,
+            (mentor_id,),
+        )
+
+        availability_rows = cur.fetchall()
+
+        # Get already booked slots
+        cur.execute(
+            """
+            SELECT session_date, start_time, end_time
+            FROM mentor_bookings
+            WHERE mentor_id = %s
+              AND status = 'booked'
+              AND session_date >= CURRENT_DATE
+            """,
+            (mentor_id,),
+        )
+
+        booked = {
+            (
+                row["session_date"],
+                row["start_time"].strftime("%H:%M"),
+                row["end_time"].strftime("%H:%M"),
+            )
+            for row in cur.fetchall()
+        }
+
+        slots = []
+        now = datetime.utcnow()
+
+        for availability in availability_rows:
+            availability = dict(availability)
+            session_date = availability["availability_date"]
+
+            generated = generate_slots_for_date(
+                availability,
+                session_date,
+            )
+
+            for slot in generated:
+                slot_key = (
+                    session_date,
+                    slot["start_time"],
+                    slot["end_time"],
+                )
+
+                slot_start = datetime.combine(
+                    session_date,
+                    parse_hhmm(slot["start_time"]),
+                )
+
+                if slot_key in booked:
+                    continue
+
+                if slot_start <= now:
+                    continue
+
+                slot["can_book"] = True
+                slots.append(slot)
+
+        return {
+            "mentor_id": mentor_id,
+            "slots": slots,
+        }
+
+    finally:
+        conn.close()
+
 @router.get("/{mentor_id}/slots")
 def get_mentor_slots(mentor_id: int, session_date: date):
     """

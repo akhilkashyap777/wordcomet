@@ -189,16 +189,13 @@
 
         <br>
 
-        <div>
-            <label>Date</label>
-            <input type="date" id="sessionDate">
+        <div id="mentorAvailabilitySection">
+            <h3>Mentor Availability</h3>
+
+            <div id="mentorAvailableSlots">
+                <p>Select a mentor to view available dates and times.</p>
+            </div>
         </div>
-
-        <br>
-
-        <button id="loadSlotsBtn">
-            Load Slots
-        </button>
 
         <hr>
 
@@ -214,9 +211,9 @@
         <table border="1" width="100%">
             <thead>
                 <tr>
+                    <th>Date</th>
                     <th>Start</th>
                     <th>End</th>
-                    <th>Booked</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -416,7 +413,7 @@ async function init() {
         loadMyBookings();
 
         document.getElementById("domainDropdown").onchange = loadMentorsByDomain;
-        document.getElementById("sessionDate").onblur = loadMentorsByDate;
+        document.getElementById("mentorDropdown").onchange = loadMentorAvailability;
     }
 
     document.getElementById("startTime").onchange = updateSlotDuration;
@@ -431,7 +428,6 @@ async function init() {
     document.getElementById("availabilityDate").min = localToday;
 
     document.getElementById("createAvailabilityBtn").onclick = createAvailability;
-    document.getElementById("loadSlotsBtn").onclick = loadSlots;
 }
 
 async function api(url, options = {}) {
@@ -845,31 +841,62 @@ async function loadMentorsByDomain() {
     }
 }
 
-async function loadMentorsByDate() {
+async function loadMentorAvailability() {
     try {
-        const date = document.getElementById("sessionDate").value;
+        const mentorId =
+            document.getElementById("mentorDropdown").value;
 
-        if (!date) {
-            loadMentors();
+        const container =
+            document.getElementById("mentorAvailableSlots");
+
+        const tbody =
+            document.getElementById("slotsTable");
+
+        container.innerHTML = "";
+        tbody.innerHTML = "";
+
+        if (!mentorId) {
+            container.innerHTML =
+                "<p>Select a mentor to view available dates and times.</p>";
             return;
         }
 
         const data = await api(
-            `/mentor/bydate?session_date=${encodeURIComponent(date)}`
+            `/mentor/${mentorId}/available-slots`
         );
 
-        const dropdown = document.getElementById("mentorDropdown");
-        dropdown.innerHTML = `<option value="">Select Mentor</option>`;
+        if (!data.slots || data.slots.length === 0) {
+            container.innerHTML =
+                "<p>No available sessions for this mentor.</p>";
+            return;
+        }
 
-        data.mentors.forEach(m => {
-            const option = document.createElement("option");
+        data.slots.forEach(slot => {
 
-            option.value = m.id;
-            option.textContent =
-                `${m.display_name || m.full_name || "Mentor"} (${m.id})`;
+            const tr = document.createElement("tr");
 
-            dropdown.appendChild(option);
+            tr.innerHTML = `
+                <td>${slot.session_date}</td>
+                <td>${formatTime(slot.start_time)}</td>
+                <td>${formatTime(slot.end_time)}</td>
+                <td>
+                    <button onclick="bookSlot(
+                        ${slot.mentor_id},
+                        ${slot.availability_id},
+                        '${slot.session_date}',
+                        '${slot.start_time}',
+                        '${slot.end_time}'
+                    )">
+                        Book
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
         });
+
+        container.innerHTML =
+            `<p>${data.slots.length} available session(s)</p>`;
 
     } catch (err) {
         showToast(err.message);
