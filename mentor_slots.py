@@ -142,7 +142,17 @@ DESIGNATIONS = [
     "Cyber Security",
     "Quality Assurance (QA)",
     "UI/UX Design",
-    "Product Management"
+    "Product Management",
+
+    # Non-IT
+    "Operations Management",
+    "Supply Chain & Logistics",
+    "Business Development",
+    "B2B Sales",
+    "Project & Program Management",
+    "Learning & Development (L&D)",
+    "HR Operations",
+    "Procurement & Vendor Management"
 ]
 
 
