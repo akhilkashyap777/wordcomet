@@ -800,6 +800,12 @@
                                     <strong>Student Resume:</strong>
                                     ${resume.filename || "Resume"}
                                 </p>
+
+                                <button
+                                    type="button"
+                                    onclick="downloadStudentResume(${booking.id})">
+                                    Download Resume
+                                </button>
                             `;
 
                         } else {
@@ -830,6 +836,23 @@
                 "<p>Could not load upcoming bookings.</p>";
         }
     }
+
+    window.downloadStudentResume = async function (bookingId) {
+        try {
+            const data = await api(
+                `/mentor/bookings/${bookingId}/resume/download`
+            );
+
+            if (!data.url) {
+                throw new Error("Resume download URL not available.");
+            }
+
+            window.open(data.url, "_blank");
+
+        } catch (err) {
+            alert(err.message || "Could not download resume.");
+        }
+    };
 
     async function uploadResume() {
 

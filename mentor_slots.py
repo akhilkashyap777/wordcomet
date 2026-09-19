@@ -795,6 +795,54 @@ def upload_booking_resume(
         conn.close()
 
 
+@router.get("/bookings/{booking_id}/resume/download")
+def download_student_resume(
+    booking_id: int,
+    user=Depends(get_current_user)
+):
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT mb.resume_key, mb.resume_filename
+            FROM mentor_bookings mb
+            JOIN users u ON u.id = mb.mentor_id
+            WHERE mb.id = %s
+              AND u.firebase_uid = %s
+            """,
+            (booking_id, user["uid"]),
+        )
+
+        booking = cur.fetchone()
+
+        if not booking:
+            raise HTTPException(
+                status_code=404,
+                detail="Booking not found"
+            )
+
+        if not booking["resume_key"]:
+            raise HTTPException(
+                status_code=404,
+                detail="Resume not uploaded"
+            )
+
+        url = generate_presigned_get_url(
+            booking["resume_key"]
+        )
+
+        return {
+            "url": url,
+            "filename": booking["resume_filename"]
+        }
+
+    finally:
+        conn.close()
+
+
 # ─── Timed WebSocket for Video Signaling ─────────────────────────────
 
 active_rooms: Dict[str, List[WebSocket]] = {}
